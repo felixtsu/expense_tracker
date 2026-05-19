@@ -84,7 +84,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     if (_aiInsight == null) {
       throw Exception('AiInsightApiDataSource not configured');
     }
-    return _aiInsight!.generateMonthlyInsight(
+    return _aiInsight.generateMonthlyInsight(
       year: year,
       month: month,
       totals: totals,

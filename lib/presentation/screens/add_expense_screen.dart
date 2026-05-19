@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/datasources/mlkit_ocr_data_source.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
@@ -21,6 +23,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseCategory _category = ExpenseCategory.other;
   DateTime _date = DateTime.now();
   bool _aiBusy = false;
+  bool _scanBusy = false;
+  final _ocr = MlKitOcrDataSource();
+  final _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -37,6 +42,46 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       lastDate: DateTime(2100),
     );
     if (picked != null) setState(() => _date = picked);
+  }
+
+  Future<void> _scanReceipt() async {
+    setState(() => _scanBusy = true);
+    try {
+      final xFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (xFile == null) return;
+
+      final result = await _ocr.scan(xFile.path);
+      if (result == null) {
+        _showSnackBar('未能识别，请手动输入');
+        return;
+      }
+
+      setState(() {
+        if (result.amount != null && result.amount!.isNotEmpty) {
+          _amountController.text = result.amount!;
+        }
+        if (result.merchant != null && result.merchant!.isNotEmpty) {
+          _noteController.text = result.merchant!;
+        }
+      });
+
+      final parts = <String>[];
+      if (result.amount != null) parts.add('金额 ${result.amount}');
+      if (result.merchant != null) parts.add('商户 ${result.merchant}');
+      _showSnackBar('已识别：${parts.join('、')}');
+    } catch (e) {
+      _showSnackBar('拍照识别失败：$e');
+    } finally {
+      setState(() => _scanBusy = false);
+    }
+  }
+
+  void _showSnackBar(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Future<void> _runMockAi() async {
@@ -87,20 +132,38 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: '金额',
-                  prefixText: '¥ ',
-                ),
-                validator: (v) {
-                  final t = v?.trim() ?? '';
-                  if (t.isEmpty) return '请输入金额';
-                  final n = double.tryParse(t);
-                  if (n == null || n <= 0) return '请输入有效正数';
-                  return null;
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: '金额',
+                        prefixText: '¥ ',
+                      ),
+                      validator: (v) {
+                        final t = v?.trim() ?? '';
+                        if (t.isEmpty) return '请输入金额';
+                        final n = double.tryParse(t);
+                        if (n == null || n <= 0) return '请输入有效正数';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton.filled(
+                    onPressed: _scanBusy ? null : _scanReceipt,
+                    tooltip: '拍照识别',
+                    icon: _scanBusy
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.camera_alt),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<ExpenseCategory>(
