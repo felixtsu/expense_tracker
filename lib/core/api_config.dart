@@ -6,7 +6,7 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// 目前指向占位符，部署 Vercel 项目后填入真实 URL
-  /// 示例：https://expense-tracker-api.vercel.app
-  static const String baseUrl = 'https://your-vercel-project.vercel.app';
+  /// Vercel serverless API — handles AI categorization + monthly insight
+  /// Key lives in Vercel env vars, never shipped in the Flutter app
+  static const String baseUrl = 'https://expense-tracker-api-lovat.vercel.app';
 }
