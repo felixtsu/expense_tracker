@@ -22,8 +22,25 @@ List<Color> _categoryColors(BuildContext context) {
   ];
 }
 
-class ReportsScreen extends StatelessWidget {
+class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
+
+  @override
+  State<ReportsScreen> createState() => _ReportsScreenState();
+}
+
+class _ReportsScreenState extends State<ReportsScreen> {
+  /// Cached insight text per month key (e.g. "2025_5").
+  final Map<String, String> _cachedInsights = {};
+
+  /// The insight currently displayed (null = not yet generated).
+  String? _currentInsight;
+
+  /// Whether an AI call is in flight.
+  bool _loadingInsight = false;
+
+  /// The month key for which _currentInsight is valid.
+  String? _insightForMonth;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +50,14 @@ class ReportsScreen extends StatelessWidget {
     final repo = context.read<ExpenseRepository>();
     final currency = NumberFormat.currency(locale: 'zh_CN', symbol: '¥');
     final title = DateFormat.yMMM('zh_CN').format(month);
+    final monthKey = '${month.year}_${month.month}';
+
+    // Invalidate cached insight when month changes to a month we haven't
+    // generated an insight for yet.
+    if (_insightForMonth != monthKey) {
+      _currentInsight = _cachedInsights[monthKey];
+      _insightForMonth = _currentInsight != null ? monthKey : null;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -65,7 +90,8 @@ class ReportsScreen extends StatelessWidget {
               return Center(child: Text('加载失败：${snapshot.error}'));
             }
             final totals = snapshot.data!;
-            final totalSum = totals.values.fold<double>(0, (a, b) => a + b);
+            final totalSum =
+                totals.values.fold<double>(0, (a, b) => a + b);
             final colors = _categoryColors(context);
             if (totalSum <= 0) {
               return Center(
@@ -93,10 +119,11 @@ class ReportsScreen extends StatelessWidget {
                   value: e.value,
                   title: '${pct.toStringAsFixed(0)}%',
                   radius: 56,
-                  titleStyle: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  titleStyle:
+                      Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                 ),
               );
             }
@@ -135,14 +162,16 @@ class ReportsScreen extends StatelessWidget {
                         child: ListView(
                           children: entries.map((e) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 4),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: colors[e.key.index % colors.length],
+                                      color: colors[
+                                          e.key.index % colors.length],
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -163,11 +192,132 @@ class ReportsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+
+                // ── AI Insight section ──────────────────────────────────
+
+                const SizedBox(height: 16),
+
+                // Show cached/generate insight
+                if (_currentInsight != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('✨ '),
+                            Text(
+                              'AI 月报洞察',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _currentInsight!,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
+
+                // Action button
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    onPressed: _loadingInsight
+                        ? null
+                        : () => _generateInsight(
+                              context,
+                              month,
+                              totals,
+                              monthKey,
+                            ),
+                    icon: _loadingInsight
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.auto_awesome, size: 18),
+                    label: Text(
+                      _loadingInsight
+                          ? '生成中…'
+                          : _currentInsight != null
+                              ? '重新生成'
+                              : '✨ AI 月报洞察',
+                    ),
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  Future<void> _generateInsight(
+    BuildContext context,
+    DateTime month,
+    Map<ExpenseCategory, double> totals,
+    String monthKey,
+  ) async {
+    setState(() => _loadingInsight = true);
+
+    try {
+      // Convert ExpenseCategory-double map to label-double map
+      final stringTotals = <String, double>{};
+      for (final e in totals.entries) {
+        if (e.value > 0) {
+          stringTotals[e.key.label] = e.value;
+        }
+      }
+
+      final repo = context.read<ExpenseRepository>();
+      final insight = await repo.generateMonthlyInsight(
+        year: month.year,
+        month: month.month,
+        totals: stringTotals,
+      );
+
+      setState(() {
+        _currentInsight = insight;
+        _insightForMonth = monthKey;
+        _cachedInsights[monthKey] = insight;
+        _loadingInsight = false;
+      });
+    } catch (e) {
+      setState(() => _loadingInsight = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI 洞察生成失败：$e')),
+        );
+      }
+    }
   }
 }

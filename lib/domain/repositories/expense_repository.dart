@@ -17,4 +17,12 @@ abstract class ExpenseRepository {
     required String amountText,
     required String note,
   });
+
+  /// Generate an AI-written monthly spending insight in Chinese.
+  /// [totals] maps category labels (String) to amounts.
+  Future<String> generateMonthlyInsight({
+    required int year,
+    required int month,
+    required Map<String, double> totals,
+  });
 }

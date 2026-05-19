@@ -149,11 +149,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.auto_awesome),
-                label: Text(_aiBusy ? 'AI 分类中…' : 'AI 自动分类（Mock）'),
+                label: Text(_aiBusy ? 'AI 分类中…' : 'AI 自动分类'),
               ),
               const SizedBox(height: 8),
               Text(
-                'Mock：控制台会打印「OpenAI」提示词，并随机返回一个类别。',
+                '通过 AI 分析金额和备注，自动推荐最合适的分类。',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),

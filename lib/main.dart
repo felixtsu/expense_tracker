@@ -4,7 +4,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 
-import 'data/datasources/ai_categorization_mock_data_source.dart';
+import 'data/datasources/ai_categorization_api_data_source.dart';
+import 'data/datasources/ai_insight_api_data_source.dart';
 import 'data/datasources/expense_local_data_source.dart';
 import 'data/repositories/expense_repository_impl.dart';
 import 'domain/repositories/expense_repository.dart';
@@ -19,9 +20,16 @@ Future<void> main() async {
   final db = await ExpenseLocalDataSource.open(
     ExpenseLocalDataSource.defaultDbFilePath(dbPath),
   );
+
+  // Vercel serverless functions handle MiniMax API key securely on the server side.
+  // Flutter app only knows the Vercel API URL (defined in api_config.dart).
+  final aiApi = AiCategorizationApiDataSource();
+  final aiInsightApi = AiInsightApiDataSource();
+
   final repository = ExpenseRepositoryImpl(
     ExpenseLocalDataSource(db),
-    AiCategorizationMockDataSource(),
+    aiApi,
+    aiInsight: aiInsightApi,
   );
 
   runApp(ExpenseTrackerApp(repository: repository));

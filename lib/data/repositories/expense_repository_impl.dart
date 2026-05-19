@@ -3,14 +3,24 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
+import '../datasources/ai_categorization_api_data_source.dart';
 import '../datasources/ai_categorization_mock_data_source.dart';
+import '../datasources/ai_insight_api_data_source.dart';
 import '../datasources/expense_local_data_source.dart';
 
 class ExpenseRepositoryImpl implements ExpenseRepository {
-  ExpenseRepositoryImpl(this._local, this._ai);
+  ExpenseRepositoryImpl(
+    this._local,
+    this._aiApi, {
+    AiCategorizationMockDataSource? aiMock,
+    AiInsightApiDataSource? aiInsight,
+  })  : _aiMock = aiMock ?? AiCategorizationMockDataSource(),
+        _aiInsight = aiInsight;
 
   final ExpenseLocalDataSource _local;
-  final AiCategorizationMockDataSource _ai;
+  final AiCategorizationApiDataSource _aiApi;
+  final AiCategorizationMockDataSource _aiMock;
+  final AiInsightApiDataSource? _aiInsight;
 
   @override
   Future<List<Expense>> getAll() => _local.getAllOrdered();
@@ -51,7 +61,33 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   Future<ExpenseCategory> suggestCategoryWithMockAi({
     required String amountText,
     required String note,
-  }) {
-    return _ai.suggestCategory(amountText: amountText, note: note);
+  }) async {
+    // Try real API first, fall back to mock on any error
+    try {
+      return await _aiApi.suggestCategory(
+        amountText: amountText,
+        note: note,
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('[AiCategorization] API failed, using mock fallback: $e');
+      return _aiMock.suggestCategory(amountText: amountText, note: note);
+    }
+  }
+
+  @override
+  Future<String> generateMonthlyInsight({
+    required int year,
+    required int month,
+    required Map<String, double> totals,
+  }) async {
+    if (_aiInsight == null) {
+      throw Exception('AiInsightApiDataSource not configured');
+    }
+    return _aiInsight!.generateMonthlyInsight(
+      year: year,
+      month: month,
+      totals: totals,
+    );
   }
 }
