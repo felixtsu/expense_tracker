@@ -3,7 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/datasources/mlkit_ocr_data_source.dart';
+import '../../data/datasources/ocr_factory.dart';
 import '../../data/subscription_service.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
@@ -25,7 +25,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   DateTime _date = DateTime.now();
   bool _aiBusy = false;
   bool _scanBusy = false;
-  final _ocr = MlKitOcrDataSource();
+  final _ocr = createOcrDataSource();
   final _picker = ImagePicker();
 
   @override

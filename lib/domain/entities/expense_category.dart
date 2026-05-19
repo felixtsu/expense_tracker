@@ -1,4 +1,4 @@
-/// Fixed categories for the expense tracker (Chinese labels).
+/// Fixed categories for the expense tracker (Chinese labels + emoji).
 enum ExpenseCategory {
   dining,
   transport,
@@ -8,6 +8,17 @@ enum ExpenseCategory {
   education,
   entertainment,
   other;
+
+  String get emoji => switch (this) {
+        ExpenseCategory.dining => '🍜',
+        ExpenseCategory.transport => '🚕',
+        ExpenseCategory.shopping => '🛒',
+        ExpenseCategory.housing => '🏠',
+        ExpenseCategory.medical => '💊',
+        ExpenseCategory.education => '📚',
+        ExpenseCategory.entertainment => '🎬',
+        ExpenseCategory.other => '📌',
+      };
 
   String get label => switch (this) {
         ExpenseCategory.dining => '餐饮',

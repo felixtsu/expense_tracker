@@ -5,11 +5,16 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../providers/app_providers.dart';
 
 class ExpenseListScreen extends StatelessWidget {
   const ExpenseListScreen({super.key});
+
+  String _formatChineseDate(DateTime date) {
+    return '${date.month}月${date.day}日';
+  }
 
   Future<void> _exportCsv(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -49,9 +54,15 @@ class ExpenseListScreen extends StatelessWidget {
       ),
       body: _buildBody(context, listState, currency),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'expense_list_fab',
         onPressed: () => nav.setTab(1),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
-        label: const Text('记一笔'),
+        label: const Text(
+          '记一笔',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -70,12 +81,32 @@ class ExpenseListScreen extends StatelessWidget {
     final items = listState.expenses;
     if (items.isEmpty) {
       return Center(
-        child: Text(
-          '暂无记录\n点击右下角「记一笔」快速添加',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.outlineVariant,
               ),
+              const SizedBox(height: 16),
+              Text(
+                '还没有任何支出记录',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '点击下方「记一笔」添加第一笔支出吧',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -87,21 +118,46 @@ class ExpenseListScreen extends StatelessWidget {
         final e = items[i];
         return Card(
           child: ListTile(
-            title: Text(
-              currency.format(e.amount),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Text(
-              '${DateFormat.yMMMd('zh_CN').format(e.date)} · ${e.category.label}'
-              '${e.note.trim().isEmpty ? '' : '\n${e.note}'}',
-            ),
-            isThreeLine: e.note.trim().isNotEmpty,
             leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               child: Text(
-                e.category.label.substring(0, 1),
-                style: const TextStyle(fontSize: 14),
+                e.category.emoji,
+                style: const TextStyle(fontSize: 18),
               ),
             ),
+            title: Text(
+              currency.format(e.amount),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (e.note.trim().isNotEmpty)
+                  Text(
+                    e.note,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                Text(
+                  _formatChineseDate(e.date),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                ),
+              ],
+            ),
+            trailing: Text(
+              e.category.label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+            isThreeLine: e.note.trim().isNotEmpty,
           ),
         );
       },

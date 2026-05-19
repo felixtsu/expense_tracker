@@ -36,9 +36,10 @@ class MlKitOcrDataSource implements ExpenseOcrDataSource {
   String? _extractAmount(String text) {
     // Look for patterns like: ¥25.50  25.50  RMB 25.50  总计 128.00
     final patterns = [
-      RegExp(r'[¥￥]?\s*(\d+\.?\d*)'),          // ¥128 or 128.00
+      RegExp(r'[¥￥]?\s*(\d+\.?\d*)'), // ¥128 or 128.00
       RegExp(r'[¥￥]?\s*(\d{1,6}\.?\d{0,2})'), // general
-      RegExp(r'(?:total|总计|合计|金额)[:\s]*[¥￥]?\s*(\d+\.?\d*)', caseSensitive: false),
+      RegExp(r'(?:total|总计|合计|金额)[:\s]*[¥￥]?\s*(\d+\.?\d*)',
+          caseSensitive: false),
     ];
 
     double? best;

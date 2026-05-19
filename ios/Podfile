@@ -1,5 +1,5 @@
-# Uncomment this line to define a global platform for your project
-# platform :ios, '12.0'
+# Define a global platform for the project
+platform :ios, '15.5'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -40,5 +40,21 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+      # Fix MLImage linking issue for iOS Simulator on ARM64 Macs
+      if target.name == 'MLImage'
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      end
+    end
+  end
+  # Link Vision framework for Apple Vision OCR (used when running on real device)
+  installer.pods_project.targets.each do |target|
+    if target.name == 'Runner'
+      target.build_configurations.each do |config|
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-framework Vision'
+      end
+    end
   end
 end

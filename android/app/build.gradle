@@ -42,3 +42,8 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Google ML Kit Text Recognition — used via platform channel in MainActivity
+    implementation 'com.google.mlkit:text-recognition:16.0.0'
+}

@@ -12,7 +12,7 @@ ThemeData buildAppTheme() {
     inputDecorationTheme: const InputDecorationTheme(
       border: OutlineInputBorder(),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
