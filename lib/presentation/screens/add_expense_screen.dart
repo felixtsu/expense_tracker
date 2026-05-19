@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/datasources/mlkit_ocr_data_source.dart';
+import '../../data/subscription_service.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
@@ -84,7 +85,44 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Future<void> _runMockAi() async {
+  void _showAiProPrompt() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🔒 AI Pro 订阅'),
+        content: const Text(
+          'AI 自动分类是 AI Pro 功能。订阅后可解锁：\n'
+          '• 无限次 AI 分类\n'
+          '• AI 月报洞察\n'
+          '• 云端数据备份\n\n'
+          '订阅费用按实际 Token 用量计费。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('不了'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              // TODO: open IAP purchase flow
+              _showSnackBar('IAP 购买流程开发中…');
+            },
+            child: const Text('立即订阅'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runAiCategorize() async {
+    final sub = context.read<SubscriptionService>();
+    final error = sub.checkAiAccess();
+    if (error != null) {
+      _showAiProPrompt();
+      return;
+    }
+
     setState(() => _aiBusy = true);
     try {
       final repo = context.read<ExpenseRepository>();
@@ -92,7 +130,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         amountText: _amountController.text.trim(),
         note: _noteController.text.trim(),
       );
+      await sub.consumeAiCall();
       if (mounted) setState(() => _category = cat);
+    } catch (e) {
+      if (mounted) _showSnackBar('AI 分类失败：$e');
     } finally {
       if (mounted) setState(() => _aiBusy = false);
     }
@@ -123,6 +164,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sub = context.watch<SubscriptionService>();
+    final aiBlocked = sub.checkAiAccess() != null;
+
     return Scaffold(
       appBar: AppBar(title: const Text('记一笔')),
       body: SingleChildScrollView(
@@ -132,6 +176,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Amount + Camera (always free)
               Row(
                 children: [
                   Expanded(
@@ -154,18 +199,30 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   const SizedBox(width: 12),
                   IconButton.filled(
                     onPressed: _scanBusy ? null : _scanReceipt,
-                    tooltip: '拍照识别',
+                    tooltip: '拍照识别收据（免费）',
                     icon: _scanBusy
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.camera_alt),
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                '📷 拍照识别收据 — 完全免费，无需网络',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+              ),
               const SizedBox(height: 16),
+
+              // Category dropdown
               DropdownButtonFormField<ExpenseCategory>(
                 value: _category,
                 decoration: const InputDecoration(labelText: '类别'),
@@ -182,6 +239,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 },
               ),
               const SizedBox(height: 16),
+
+              // Note
               TextFormField(
                 controller: _noteController,
                 maxLines: 3,
@@ -191,6 +250,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              // Date
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('日期'),
@@ -203,25 +264,38 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _aiBusy ? null : _runMockAi,
-                icon: _aiBusy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome),
-                label: Text(_aiBusy ? 'AI 分类中…' : 'AI 自动分类'),
-              ),
+
+              // AI Categorize button — gated by IAP
+              if (aiBlocked)
+                OutlinedButton.icon(
+                  onPressed: _showAiProPrompt,
+                  icon: const Icon(Icons.lock),
+                  label: const Text('🔒 AI 自动分类（AI Pro）'),
+                )
+              else
+                OutlinedButton.icon(
+                  onPressed: _aiBusy ? null : _runAiCategorize,
+                  icon: _aiBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome),
+                  label: Text(_aiBusy ? 'AI 分类中…' : '✨ AI 自动分类'),
+                ),
               const SizedBox(height: 8),
               Text(
-                '通过 AI 分析金额和备注，自动推荐最合适的分类。',
+                aiBlocked
+                    ? '订阅 AI Pro 解锁 AI 分类、月报洞察、云端备份'
+                    : '通过 AI 分析金额和备注，自动推荐最合适的分类',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
               ),
               const SizedBox(height: 24),
+
+              // Submit
               FilledButton(
                 onPressed: _submit,
                 child: const Padding(

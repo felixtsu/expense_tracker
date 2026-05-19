@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/subscription_service.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../providers/app_providers.dart';
@@ -242,36 +243,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
                 const SizedBox(height: 8),
 
-                // Action button
+                // AI Insight button — gated by IAP
                 Align(
                   alignment: Alignment.centerRight,
-                  child: FilledButton.icon(
-                    onPressed: _loadingInsight
-                        ? null
-                        : () => _generateInsight(
-                              context,
-                              month,
-                              totals,
-                              monthKey,
-                            ),
-                    icon: _loadingInsight
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.auto_awesome, size: 18),
-                    label: Text(
-                      _loadingInsight
-                          ? '生成中…'
-                          : _currentInsight != null
-                              ? '重新生成'
-                              : '✨ AI 月报洞察',
-                    ),
-                  ),
+                  child: _buildInsightButton(context, month, totals, monthKey),
                 ),
               ],
             );
@@ -287,10 +262,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
     Map<ExpenseCategory, double> totals,
     String monthKey,
   ) async {
+    final sub = context.read<SubscriptionService>();
+    final error = sub.checkAiAccess();
+    if (error != null) {
+      _showAiProPrompt(context);
+      return;
+    }
+
     setState(() => _loadingInsight = true);
 
     try {
-      // Convert ExpenseCategory-double map to label-double map
       final stringTotals = <String, double>{};
       for (final e in totals.entries) {
         if (e.value > 0) {
@@ -304,6 +285,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
         month: month.month,
         totals: stringTotals,
       );
+
+      await sub.consumeAiCall();
 
       setState(() {
         _currentInsight = insight;
@@ -319,5 +302,77 @@ class _ReportsScreenState extends State<ReportsScreen> {
         );
       }
     }
+  }
+
+  void _showAiProPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🔒 AI Pro 订阅'),
+        content: const Text(
+          'AI 月报洞察是 AI Pro 功能。订阅后可解锁：\n'
+          '• 无限次 AI 月报洞察\n'
+          '• AI 智能分类\n'
+          '• 云端数据备份\n\n'
+          '订阅费用按实际 Token 用量计费。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('不了'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('IAP 购买流程开发中…')),
+              );
+            },
+            child: const Text('立即订阅'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightButton(
+    BuildContext context,
+    DateTime month,
+    Map<ExpenseCategory, double> totals,
+    String monthKey,
+  ) {
+    final sub = context.watch<SubscriptionService>();
+    final blocked = sub.checkAiAccess() != null;
+
+    if (blocked) {
+      return OutlinedButton.icon(
+        onPressed: () => _showAiProPrompt(context),
+        icon: const Icon(Icons.lock, size: 18),
+        label: const Text('🔒 AI 月报洞察（AI Pro）'),
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: _loadingInsight
+          ? null
+          : () => _generateInsight(context, month, totals, monthKey),
+      icon: _loadingInsight
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.auto_awesome, size: 18),
+      label: Text(
+        _loadingInsight
+            ? '生成中…'
+            : _currentInsight != null
+                ? '重新生成'
+                : '✨ AI 月报洞察',
+      ),
+    );
   }
 }

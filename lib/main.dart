@@ -8,6 +8,7 @@ import 'data/datasources/ai_categorization_api_data_source.dart';
 import 'data/datasources/ai_insight_api_data_source.dart';
 import 'data/datasources/expense_local_data_source.dart';
 import 'data/repositories/expense_repository_impl.dart';
+import 'data/subscription_service.dart';
 import 'domain/repositories/expense_repository.dart';
 import 'presentation/providers/app_providers.dart';
 import 'presentation/screens/home_shell.dart';
@@ -21,8 +22,10 @@ Future<void> main() async {
     ExpenseLocalDataSource.defaultDbFilePath(dbPath),
   );
 
-  // Vercel serverless functions handle MiniMax API key securely on the server side.
-  // Flutter app only knows the Vercel API URL (defined in api_config.dart).
+  // AI features are gated behind IAP subscription (SubscriptionService).
+  // Free version: OCR only. AI categorization/insight require AI Pro subscription.
+  final subscriptionService = await SubscriptionService.create();
+
   final aiApi = AiCategorizationApiDataSource();
   final aiInsightApi = AiInsightApiDataSource();
 
@@ -32,19 +35,28 @@ Future<void> main() async {
     aiInsight: aiInsightApi,
   );
 
-  runApp(ExpenseTrackerApp(repository: repository));
+  runApp(ExpenseTrackerApp(
+    repository: repository,
+    subscriptionService: subscriptionService,
+  ));
 }
 
 class ExpenseTrackerApp extends StatelessWidget {
-  const ExpenseTrackerApp({super.key, required this.repository});
+  const ExpenseTrackerApp({
+    super.key,
+    required this.repository,
+    required this.subscriptionService,
+  });
 
   final ExpenseRepository repository;
+  final SubscriptionService subscriptionService;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         Provider<ExpenseRepository>.value(value: repository),
+        Provider<SubscriptionService>.value(value: subscriptionService),
         ChangeNotifierProvider(
           create: (_) => ExpenseListController(repository)..load(),
         ),
