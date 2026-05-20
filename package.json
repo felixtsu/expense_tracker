@@ -1,0 +1,8 @@
+{
+  "name": "expense-tracker-api",
+  "private": true,
+  "description": "Vercel serverless API for expense tracker AI (DeepSeek)",
+  "engines": {
+    "node": ">=18"
+  }
+}

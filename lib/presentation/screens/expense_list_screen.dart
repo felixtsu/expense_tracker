@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/subscription_service.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../providers/app_providers.dart';
@@ -14,6 +15,41 @@ class ExpenseListScreen extends StatelessWidget {
 
   String _formatChineseDate(DateTime date) {
     return '${date.month}月${date.day}日';
+  }
+
+  Future<void> _openSettings(BuildContext context) async {
+    final sub = context.read<SubscriptionService>();
+    if (!context.mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('设置'),
+            content: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('AI 演示模式'),
+              subtitle: const Text('跳过订阅限制，用于测试 AI 分类与月报洞察'),
+              value: sub.isDemoMode,
+              onChanged: (enabled) async {
+                if (enabled) {
+                  await sub.enableDemoMode();
+                } else {
+                  await sub.disableDemoMode();
+                }
+                setDialogState(() {});
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('关闭'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _exportCsv(BuildContext context) async {
@@ -45,6 +81,11 @@ class ExpenseListScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('支出'),
         actions: [
+          IconButton(
+            tooltip: '设置',
+            onPressed: () => _openSettings(context),
+            icon: const Icon(Icons.settings_outlined),
+          ),
           IconButton(
             tooltip: '导出 CSV',
             onPressed: () => _exportCsv(context),

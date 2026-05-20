@@ -1,12 +1,23 @@
-/// Vercel API base URL.
-/// 部署后替换为你的 Vercel 项目地址，例如：
-///   https://expense-tracker-api.vercel.app
-/// 开发环境可指向本地：
-///   http://localhost:3000
+/// Vercel API base URL — injected at build time via `--dart-define`.
+///
+/// ```bash
+/// flutter build apk --release \
+///   --dart-define=API_BASE_URL=https://your-project.vercel.app
+///
+/// flutter build ios --release \
+///   --dart-define=API_BASE_URL=https://your-project.vercel.app
+/// ```
+///
+/// Local dev (Vercel CLI `vercel dev`):
+/// ```bash
+/// flutter run --dart-define=API_BASE_URL=http://localhost:3000
+/// ```
 class ApiConfig {
   ApiConfig._();
 
-  /// Vercel serverless API — handles AI categorization + monthly insight
-  /// Key lives in Vercel env vars, never shipped in the Flutter app
-  static const String baseUrl = 'https://expense-tracker-api-lovat.vercel.app';
+  /// Default matches production Vercel deployment; override per build/flavor.
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://expensetracker-two-ashen.vercel.app',
+  );
 }

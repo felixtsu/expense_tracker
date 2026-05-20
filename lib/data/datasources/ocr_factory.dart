@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'expense_ocr_data_source.dart';
@@ -18,8 +19,15 @@ ExpenseOcrDataSource createOcrDataSource() {
   } else if (Platform.isIOS) {
     return AppleVisionOcrDataSource();
   } else {
-    throw UnsupportedError('OCR not supported on this platform');
+    // Desktop, web, and `flutter test` VM — OCR unavailable; scan() returns null.
+    return _StubOcrDataSource();
   }
+}
+
+/// No-op OCR for platforms without native recognizers (tests, macOS, web).
+class _StubOcrDataSource implements ExpenseOcrDataSource {
+  @override
+  Future<OcrResult?> scan(String imagePath) async => null;
 }
 
 /// Android: delegates to native Kotlin code via platform channel.
@@ -47,7 +55,11 @@ class _AndroidMlKitOcr implements ExpenseOcrDataSource {
         amountCandidates: amountCandidates,
         merchant: result['merchant'] as String?,
       );
+    } on PlatformException catch (e) {
+      debugPrint('[Android OCR] ${e.code}: ${e.message}');
+      return null;
     } catch (e) {
+      debugPrint('[Android OCR] Error: $e');
       return null;
     }
   }

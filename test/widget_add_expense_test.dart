@@ -167,9 +167,9 @@ Future<void> main() async {
       await tester.pumpWidget(buildTestableWidget(const AddExpenseScreen()));
       await tester.pumpAndSettle();
 
-      // Enter amount into the first TextFormField (amount)
-      final textFields = find.byType(TextFormField);
-      await tester.enterText(textFields.first, '88.5');
+      final amountField = find.byType(TextFormField).first;
+      await tester.tap(amountField);
+      await tester.enterText(amountField, '88.5');
       await tester.pumpAndSettle();
 
       // Tap save

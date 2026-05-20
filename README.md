@@ -11,6 +11,12 @@
 
 详见 [docs/OCR-DEVELOPMENT.md](docs/OCR-DEVELOPMENT.md)
 
+## 云同步与 IAP（规划中）
+
+**方案已定：** 无用户注册；Supabase 匿名登录；IAP 解锁 Pro 与云同步；换机通过恢复购买迁移数据。
+
+详见 [docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md) · 待办 [TODO.md](TODO.md)
+
 ## 技术栈
 
 - **框架**：Flutter 3.24.0
@@ -138,8 +144,13 @@ v7.0-iap           # Module G 完成（StoreKit / Play Billing）
 
 ## 相关文档
 
-- `../SPEC.md` — 项目完整规格说明书
-- `../app-dev-course-decomposition.md` — 课程分解
+- [docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md) — 云同步、匿名 Auth、IAP、迁移、Workshop 分层
+- [docs/OCR-DEVELOPMENT.md](docs/OCR-DEVELOPMENT.md) — OCR 开发与测试
+- [docs/OCR-V2-DESIGN.md](docs/OCR-V2-DESIGN.md) — OCR 候选与 AI Pro 交互
+- [TODO.md](TODO.md) — 项目待办
+- [TESTING.md](TESTING.md) — 测试与 AI 演示模式
+- `../SPEC.md` — 项目完整规格说明书（若存在）
+- `../app-dev-course-decomposition.md` — 课程分解（若存在）
 
 ## 项目路径
 

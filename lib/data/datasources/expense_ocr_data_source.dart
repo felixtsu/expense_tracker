@@ -87,7 +87,7 @@ final _totalLinePattern = RegExp(
 
 final _amountPattern = RegExp(
   r"((?:HKD|HK\$|HK＄|\bHK(?!D)(?:['\$＄])?|港(?:币|幣)|[¥￥＄]|\$)\s*)?"
-  r"(\d{1,3}(?:,\d{3})*|\d+)\.(\d{2})\b",
+  r"(-)?(\d{1,3}(?:,\d{3})*|\d+)\.(\d{2})\b",
   caseSensitive: false,
 );
 
@@ -109,12 +109,15 @@ List<AmountCandidate> extractAmountCandidatesFromText(String text) {
 
     for (final m in _amountPattern.allMatches(trimmed)) {
       final prefix = m.group(1) ?? '';
-      final intPart = (m.group(2) ?? '').replaceAll(',', '');
-      final decPart = m.group(3) ?? '';
+      final sign = m.group(2) ?? '';
+      final intPart = (m.group(3) ?? '').replaceAll(',', '');
+      final decPart = m.group(4) ?? '';
       if (intPart.isEmpty || decPart.isEmpty) continue;
 
-      final parsed = double.tryParse('$intPart.$decPart');
-      final value = parsed?.toStringAsFixed(2) ?? '$intPart.$decPart';
+      final parsed = double.tryParse('$sign$intPart.$decPart');
+      final value = parsed != null
+          ? parsed.abs().toStringAsFixed(2)
+          : '$intPart.$decPart';
       final raw = m.group(0) ?? '$prefix$intPart.$decPart';
       final key = '$value|$raw|$trimmed';
       if (!seen.add(key)) continue;

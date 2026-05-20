@@ -44,6 +44,7 @@ flutter {
 }
 
 dependencies {
-    // Google ML Kit Text Recognition via GMS
-    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.1'
+    // Bundled models — work offline on emulator without Play Services OCR download.
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'com.google.mlkit:text-recognition-chinese:16.0.1'
 }

@@ -1,0 +1,25 @@
+# Flutter app — only deploy api/ + vercel config
+android/
+ios/
+macos/
+linux/
+windows/
+web/
+lib/
+test/
+test_resources/
+build/
+.dart_tool/
+.pub-cache/
+.pub/
+**/*.apk
+**/*.ipa
+**/*.app
+docs/
+scripts/
+README.md
+TESTING.md
+TODO.md
+pubspec.yaml
+pubspec.lock
+analysis_options.yaml

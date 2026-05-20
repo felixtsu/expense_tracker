@@ -55,4 +55,11 @@ class SubscriptionService {
     await _prefs.setBool('ai_pro_active', true);
     await _prefs.setInt('ai_calls_remaining', 999);
   }
+
+  /// Turn off demo mode and restore free-tier defaults.
+  Future<void> disableDemoMode() async {
+    await _prefs.setBool('ai_demo_mode', false);
+    await _prefs.setBool('ai_pro_active', false);
+    await _prefs.setInt('ai_calls_remaining', 0);
+  }
 }
