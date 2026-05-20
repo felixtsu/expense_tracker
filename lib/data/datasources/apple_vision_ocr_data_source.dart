@@ -21,37 +21,24 @@ class AppleVisionOcrDataSource implements ExpenseOcrDataSource {
       final raw = result['text'] as String? ?? '';
       if (raw.isEmpty) return null;
 
-      final amount = _extractAmount(raw);
+      debugPrint('[OCR Raw] $raw');
+      final nativeCandidates = result['amountCandidates'] as List<dynamic>?;
+      final amountCandidates = parseAmountCandidates(raw, nativeCandidates);
       final merchant = result['merchant'] as String?;
+      debugPrint(
+        '[OCR Result] candidates=${amountCandidates.length} merchant=$merchant',
+      );
+
+      if (amountCandidates.isEmpty) return null;
 
       return OcrResult(
         rawText: raw,
-        amount: amount,
+        amountCandidates: amountCandidates,
         merchant: merchant,
       );
     } on PlatformException catch (e) {
       debugPrint('[AppleVision OCR] Error: $e');
       return null;
     }
-  }
-
-  String? _extractAmount(String text) {
-    final patterns = [
-      RegExp(r'[¥￥]?\s*(\d+\.?\d*)'),
-      RegExp(r'(?:total|总计|合计|金额|总额)[:\s]*[¥￥]?\s*(\d+\.?\d*)',
-          caseSensitive: false),
-    ];
-
-    double? best;
-    for (final p in patterns) {
-      for (final m in p.allMatches(text)) {
-        final v = double.tryParse(m.group(1) ?? '');
-        if (v != null && v > 0) {
-          if (best == null || v > best) best = v;
-        }
-      }
-    }
-
-    return best?.toStringAsFixed(2);
   }
 }

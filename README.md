@@ -5,6 +5,11 @@
 ## 项目状态
 
 **Phase 1 完成 ✅** — 2026-05-15
+**Phase 2 进行中 🔄** — OCR 拍照识别（2026-05-19）
+
+## OCR 功能（Phase 2）
+
+详见 [docs/OCR-DEVELOPMENT.md](docs/OCR-DEVELOPMENT.md)
 
 ## 技术栈
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -46,37 +47,84 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   Future<void> _scanReceipt() async {
-    setState(() => _scanBusy = true);
-    try {
-      final xFile = await _picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.rear,
-      );
-      if (xFile == null) return;
+    // Show bottom sheet to let user choose camera or gallery.
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('拍照'),
+            onTap: () => Navigator.pop(ctx, 'camera'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('从相册选择'),
+            onTap: () => Navigator.pop(ctx, 'gallery'),
+          ),
+        ],
+      ),
+    );
+    if (choice == null) return;
 
+    final isCamera = choice == 'camera';
+
+    setState(() => _scanBusy = true);
+    XFile? xFile;
+    try {
+      xFile = await _picker.pickImage(
+        source: isCamera ? ImageSource.camera : ImageSource.gallery,
+        preferredCameraDevice:
+            isCamera ? CameraDevice.rear : CameraDevice.front,
+      );
+    } on PlatformException catch (e) {
+      // iOS Simulator camera not available — fall back to gallery silently
+      if (e.code == 'camera_not_available') {
+        xFile = await _picker.pickImage(source: ImageSource.gallery);
+      } else {
+        rethrow;
+      }
+    }
+    if (xFile == null) {
+      setState(() => _scanBusy = false);
+      return;
+    }
+
+    try {
       final result = await _ocr.scan(xFile.path);
-      if (result == null) {
+      if (result == null || result.amountCandidates.isEmpty) {
         _showSnackBar('未能识别，请手动输入');
         return;
       }
 
-      setState(() {
-        if (result.amount != null && result.amount!.isNotEmpty) {
-          _amountController.text = result.amount!;
-        }
-        if (result.merchant != null && result.merchant!.isNotEmpty) {
-          _noteController.text = result.merchant!;
-        }
-      });
+      if (!mounted) return;
+      final selected = await showModalBottomSheet<AmountCandidate>(
+        context: context,
+        builder: (ctx) => _AmountCandidateSheet(
+          candidates: result.amountCandidates,
+          onCustomInput: () => Navigator.pop(ctx),
+        ),
+        isScrollControlled: true,
+      );
 
-      final parts = <String>[];
-      if (result.amount != null) parts.add('金额 ${result.amount}');
-      if (result.merchant != null) parts.add('商户 ${result.merchant}');
-      _showSnackBar('已识别：${parts.join('、')}');
+      if (selected != null) {
+        setState(() {
+          _amountController.text = selected.value;
+        });
+      }
+
+      if (result.merchant != null && result.merchant!.isNotEmpty) {
+        setState(() {
+          _noteController.text = result.merchant!;
+        });
+      }
+
+      _showSnackBar('已识别 ${result.amountCandidates.length} 个金额，请确认');
     } catch (e) {
       _showSnackBar('拍照识别失败：$e');
     } finally {
-      setState(() => _scanBusy = false);
+      if (mounted) setState(() => _scanBusy = false);
     }
   }
 
@@ -307,6 +355,136 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AmountCandidateSheet extends StatelessWidget {
+  const _AmountCandidateSheet({
+    required this.candidates,
+    required this.onCustomInput,
+  });
+
+  final List<AmountCandidate> candidates;
+  final VoidCallback onCustomInput;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final likelyTotals =
+        candidates.where((c) => c.isLikelyTotal && !c.isSuspicious).toList();
+    final others = candidates
+        .where((c) => !c.isLikelyTotal || c.isSuspicious)
+        .toList();
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                '请确认这笔金额',
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  if (likelyTotals.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        '推荐（合计行）',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    ...likelyTotals.map((c) => _candidateTile(context, c)),
+                  ],
+                  if (others.isNotEmpty) ...[
+                    if (likelyTotals.isNotEmpty)
+                      const Divider(height: 24, indent: 16, endIndent: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        '其他金额',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                    ...others.map((c) => _candidateTile(context, c)),
+                  ],
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: Icon(
+                Icons.edit_outlined,
+                color: theme.colorScheme.outline,
+              ),
+              title: const Text('手动输入金额…'),
+              onTap: onCustomInput,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _candidateTile(BuildContext context, AmountCandidate c) {
+    final theme = Theme.of(context);
+    final warningColor = theme.colorScheme.error;
+
+    return ListTile(
+      leading: Icon(
+        c.isSuspicious
+            ? Icons.warning_amber_rounded
+            : c.isLikelyTotal
+                ? Icons.recommend
+                : Icons.payments_outlined,
+        color: c.isSuspicious
+            ? warningColor
+            : c.isLikelyTotal
+                ? theme.colorScheme.primary
+                : null,
+      ),
+      title: Text(
+        c.raw.isNotEmpty ? c.raw : c.value,
+        style: TextStyle(
+          fontWeight: c.isLikelyTotal ? FontWeight.w600 : FontWeight.normal,
+          color: c.isSuspicious ? warningColor : null,
+        ),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('¥ ${c.value}'),
+          if (c.context != null && c.context != c.raw)
+            Text(
+              c.context!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall,
+            ),
+          if (c.isSuspicious)
+            Text(
+              '疑似日期，不推荐',
+              style: theme.textTheme.bodySmall?.copyWith(color: warningColor),
+            ),
+        ],
+      ),
+      onTap: () => Navigator.pop(context, c),
     );
   }
 }

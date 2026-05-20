@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'expense_ocr_data_source.dart';
 import 'apple_vision_ocr_data_source.dart';
 
-export 'expense_ocr_data_source.dart' show OcrResult, ExpenseOcrDataSource;
+export 'expense_ocr_data_source.dart'
+    show AmountCandidate, OcrResult, ExpenseOcrDataSource;
 
 /// Factory that returns the best available OCR implementation for the current platform.
 ///
@@ -32,10 +33,18 @@ class _AndroidMlKitOcr implements ExpenseOcrDataSource {
         'recognizeText',
         {'imagePath': imagePath},
       );
-      if (result == null || result['text'] == null) return null;
+      if (result == null) return null;
+
+      final raw = result['text'] as String? ?? '';
+      if (raw.isEmpty) return null;
+
+      final nativeCandidates = result['amountCandidates'] as List<dynamic>?;
+      final amountCandidates = parseAmountCandidates(raw, nativeCandidates);
+      if (amountCandidates.isEmpty) return null;
+
       return OcrResult(
-        rawText: result['text'] as String,
-        amount: result['amount'] as String?,
+        rawText: raw,
+        amountCandidates: amountCandidates,
         merchant: result['merchant'] as String?,
       );
     } catch (e) {

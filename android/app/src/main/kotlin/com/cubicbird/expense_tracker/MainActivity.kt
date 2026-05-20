@@ -1,18 +1,17 @@
 package com.cubicbird.expense_tracker
 
 import android.net.Uri
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.File
 import java.util.regex.Pattern
 
 class MainActivity : FlutterActivity() {
     private val OCR_CHANNEL = "expense_tracker/ocr_android"
-    private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+    private val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -40,29 +39,28 @@ class MainActivity : FlutterActivity() {
             return
         }
 
-        val image: InputImage
-        try {
-            image = InputImage.fromFilePath(context, Uri.fromFile(file))
-        } catch (e: Exception) {
-            result.error("IMAGE_ERROR", "Failed to load image: ${e.message}", null)
-            return
-        }
+        val image = com.google.mlkit.vision.common.InputImage.fromFilePath(context, Uri.fromFile(file))
 
         recognizer.process(image)
-            .addOnSuccess { visionText ->
+            .addOnSuccessListener { visionText ->
                 val rawText = visionText.text
+                Log.d("MainActivity", "[OCR Raw] $rawText")
                 if (rawText.isEmpty()) {
                     result.success(mapOf<String, Any?>())
-                    return
+                    return@addOnSuccessListener
                 }
 
-                val amount = extractAmount(rawText)
-                val merchant = extractMerchant(visionText.textBlocks)
+                val candidates = extractAmountCandidates(rawText)
+                val merchant = visionText.textBlocks.firstOrNull()?.text?.trim()
+                Log.d("MainActivity", "[OCR Result] candidates=${candidates.size} merchant=$merchant")
+                for (c in candidates) {
+                    Log.d("MainActivity", "[OCR Candidate] $c")
+                }
 
                 result.success(
                     mapOf(
                         "text" to rawText,
-                        "amount" to amount,
+                        "amountCandidates" to candidates,
                         "merchant" to merchant
                     )
                 )
@@ -72,30 +70,68 @@ class MainActivity : FlutterActivity() {
             }
     }
 
-    private fun extractAmount(text: String): String? {
-        val patterns = listOf(
-            Pattern.compile("[¥￥]?\\s*(\\d+\\.?\\d{0,2})"),
-            Pattern.compile("(?:total|总计|合计|金额|总额)[:\\s]*[¥￥]?\\s*(\\d+\\.?\\d{0,2})", Pattern.CASE_INSENSITIVE)
+    private fun extractAmountCandidates(text: String): List<Map<String, Any?>> {
+        val totalLinePattern = Pattern.compile(
+            "(?:total|amount|總(?:額|计|計)|合计|总计|金额|总额|实付|应付|小计|小計)",
+            Pattern.CASE_INSENSITIVE
+        )
+        val amountPattern = Pattern.compile(
+            "((?:HKD|HK\\$|HK'\\$|HK＄|\\bHK(?!D)(?:['\\$＄])?|港(?:币|幣)|[¥￥＄]|\\$)\\s*)?" +
+                "(\\d{1,3}(?:,\\d{3})*|\\d+)\\.(\\d{2})\\b",
+            Pattern.CASE_INSENSITIVE
         )
 
-        var best: Double? = null
-        for (pattern in patterns) {
-            val matcher = pattern.matcher(text)
+        val seen = mutableSetOf<String>()
+        val candidates = mutableListOf<Map<String, Any?>>()
+
+        for (line in text.split(Regex("\\r?\\n"))) {
+            val trimmed = line.trim()
+            if (trimmed.isEmpty()) continue
+
+            val isLikelyTotal = totalLinePattern.matcher(trimmed).find()
+            val matcher = amountPattern.matcher(trimmed)
             while (matcher.find()) {
-                val v = matcher.group(1)?.toDoubleOrNull()
-                if (v != null && v > 0) {
-                    if (best == null || v > best) best = v
-                }
+                val intPart = matcher.group(2)?.replace(",", "") ?: continue
+                val decPart = matcher.group(3) ?: continue
+                val valueDouble = "$intPart.$decPart".toDoubleOrNull() ?: continue
+                val value = String.format("%.2f", valueDouble)
+                val raw = matcher.group(0)?.trim() ?: continue
+                val key = "$value|$raw|$trimmed"
+                if (!seen.add(key)) continue
+
+                val isSuspicious = isSuspiciousAmount(valueDouble)
+                candidates.add(
+                    mapOf(
+                        "value" to value,
+                        "raw" to raw,
+                        "context" to trimmed,
+                        "isLikelyTotal" to isLikelyTotal,
+                        "isSuspicious" to isSuspicious
+                    )
+                )
             }
         }
-        return best?.let { String.format("%.2f", it) }
+
+        candidates.sortWith { a, b ->
+            val aTotal = a["isLikelyTotal"] as? Boolean ?: false
+            val bTotal = b["isLikelyTotal"] as? Boolean ?: false
+            if (aTotal != bTotal) return@sortWith if (aTotal) -1 else 1
+
+            val aSusp = a["isSuspicious"] as? Boolean ?: false
+            val bSusp = b["isSuspicious"] as? Boolean ?: false
+            if (aSusp != bSusp) return@sortWith if (aSusp) 1 else -1
+
+            val av = (a["value"] as? String)?.toDoubleOrNull() ?: 0.0
+            val bv = (b["value"] as? String)?.toDoubleOrNull() ?: 0.0
+            bv.compareTo(av)
+        }
+
+        return candidates
     }
 
-    private fun extractMerchant(blocks: List<com.google.mlkit.vision.text.TextBlock>): String? {
-        for (block in blocks) {
-            val text = block.text.trim()
-            if (text.length >= 4) return text
-        }
-        return null
+    private fun isSuspiciousAmount(value: Double): Boolean {
+        val whole = kotlin.math.floor(value).toLong()
+        if (whole < 1900 || whole > 2100) return false
+        return kotlin.math.abs(value - whole) < 0.0001
     }
 }

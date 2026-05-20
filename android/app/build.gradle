@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.cubicbird.expense_tracker"
     compileSdk = 35
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "26.1.10909125"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -44,6 +44,6 @@ flutter {
 }
 
 dependencies {
-    // Google ML Kit Text Recognition — used via platform channel in MainActivity
-    implementation 'com.google.mlkit:text-recognition:16.0.0'
+    // Google ML Kit Text Recognition via GMS
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:19.0.1'
 }
