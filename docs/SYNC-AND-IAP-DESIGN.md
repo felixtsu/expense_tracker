@@ -10,6 +10,8 @@ _最后更新：2026-05-20_
 
 ---
 
+**已实现部分的鉴权细节（JWT、`requirePro`、客户端配额差异）** → [API-AUTH.md](API-AUTH.md)。
+
 ## 架构结论（已定）
 
 采用 **Supabase Anonymous Auth** 作为「无感用户身份」，IAP 成功后绑定 **付费权益（entitlement）**，换机通过 **恢复购买** 找回权益与数据迁移能力。

@@ -1,6 +1,7 @@
 const { chatCompletion } = require('./_lib/deepseek');
 const { CATEGORIES, normalizeCategory } = require('./_lib/categories');
 const { setCors, handleOptions, parseBody } = require('./_lib/http');
+const { requirePro } = require('./_lib/supabase');
 
 const SYSTEM = `你是香港用户的记账助手。根据消费金额和备注，从固定类别中选出最合适的一项。
 固定类别（必须返回其中之一）：${CATEGORIES.join('、')}
@@ -13,6 +14,9 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = await requirePro(req, res);
+  if (auth === null) return;
 
   const body = parseBody(req);
   const amount = body?.amount ?? '';

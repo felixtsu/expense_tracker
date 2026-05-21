@@ -1,5 +1,6 @@
 const { chatCompletion } = require('./_lib/deepseek');
 const { setCors, handleOptions, parseBody } = require('./_lib/http');
+const { requirePro } = require('./_lib/supabase');
 
 const SYSTEM = `你是香港用户的个人理财助手。根据用户某月的分类支出汇总，用简体中文写 2–3 句简短洞察。
 要求：语气友好、具体、可执行；不要罗列数字表格；不要 markdown；总字数 80–150 字。`;
@@ -23,6 +24,9 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const auth = await requirePro(req, res);
+  if (auth === null) return;
 
   const body = parseBody(req);
   const year = Number(body?.year);

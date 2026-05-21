@@ -4,6 +4,8 @@ _最后更新：2026-05-20_
 
 **架构文档：** [docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md)（Supabase 匿名登录、IAP、迁移、Workshop 分层）
 
+**培训 Agent handoff：** [docs/WORKSHOP-HANDOFF.md](docs/WORKSHOP-HANDOFF.md)
+
 ---
 
 ## Supabase 匿名登录 + IAP + 云同步（待做）
@@ -12,27 +14,31 @@ _最后更新：2026-05-20_
 
 ### 后端（Supabase + Vercel）
 
-- [ ] 创建 Supabase 项目：`profiles`、`expenses` 表 + RLS（`auth.uid() = user_id`）
+- [x] SQL 迁移脚本：`supabase/migrations/001_sync_schema.sql`（需在 Dashboard 执行）
+- [ ] 创建 Supabase 项目并跑迁移
 - [ ] Vercel：收据校验接口（Apple / Google），写入 `profiles.is_pro`、`iap_original_tx_id`
-- [ ] Vercel：LLM 接口校验 Supabase JWT 或 `user_id` 的 Pro 状态
+- [x] Vercel：`/api/me`、`/api/dev-activate-pro`；LLM 校验 JWT + Pro（未配 Supabase 时跳过）
 - [ ] （阶段 2）恢复购买 + 按 `iap_original_tx_id` 合并旧 `user_id` 的 `expenses` 到新 `user_id`
 
 ### Flutter 数据层
 
-- [ ] 集成 `supabase_flutter`；启动时 `signInAnonymously()`，持久化 session
-- [ ] `ExpenseRepository`：SQLite 为主；Pro 开启与 Supabase 同步（先上行或简单双向）
-- [ ] `SubscriptionService`：IAP 成功后调收据 API；替换仅 SharedPreferences 的 `is_pro`（保留 **AI 演示模式** 给 Workshop）
+- [x] 集成 `supabase_flutter`；启动时 `signInAnonymously()`
+- [x] `ExpenseRepository` + `SyncService`：SQLite 为主；Pro/演示模式云同步（上行 + 拉取）
+- [x] `SubscriptionService`：`profiles.is_pro` + 演示模式；`dev-activate-pro`（debug）
+- [ ] 真 IAP 收据 API 替换开发激活
 
 ### UI / 产品
 
 - [ ] IAP 购买流程（替换「开发中…」占位）
-- [ ] 设置页：「恢复购买」入口
-- [ ] （可选）迁移进度提示：「正在恢复您的记账数据…」
+- [x] 设置页：云同步状态、「立即同步」、开发激活 Pro
+- [ ] 「恢复购买」入口（阶段 2）
+- [ ] （可选）迁移进度提示
 
 ### Workshop / 文档
 
 - [ ] Tier B 演示脚本：匿名登录 + Dashboard 看到一条 expense
 - [ ] Cheatsheet：真 IAP、RLS、迁移、开发者账号对比（见 SYNC 文档 FAQ）
+- [x] Agent handoff 索引：[docs/WORKSHOP-HANDOFF.md](docs/WORKSHOP-HANDOFF.md)（待文档 Agent 展开 Tier A/B 脚本）
 
 ---
 

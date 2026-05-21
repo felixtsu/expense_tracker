@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/expense.dart';
@@ -7,6 +8,7 @@ import '../datasources/ai_categorization_api_data_source.dart';
 import '../datasources/ai_categorization_mock_data_source.dart';
 import '../datasources/ai_insight_api_data_source.dart';
 import '../datasources/expense_local_data_source.dart';
+import '../sync_service.dart';
 
 class ExpenseRepositoryImpl implements ExpenseRepository {
   ExpenseRepositoryImpl(
@@ -14,19 +16,39 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     this._aiApi, {
     AiCategorizationMockDataSource? aiMock,
     AiInsightApiDataSource? aiInsight,
+    SyncService? syncService,
+    String? Function()? accessToken,
   })  : _aiMock = aiMock ?? AiCategorizationMockDataSource(),
-        _aiInsight = aiInsight;
+        _aiInsight = aiInsight,
+        _sync = syncService,
+        _accessToken = accessToken;
 
   final ExpenseLocalDataSource _local;
   final AiCategorizationApiDataSource _aiApi;
   final AiCategorizationMockDataSource _aiMock;
   final AiInsightApiDataSource? _aiInsight;
+  final SyncService? _sync;
+  final String? Function()? _accessToken;
+
+  VoidCallback? onDataChanged;
 
   @override
   Future<List<Expense>> getAll() => _local.getAllOrdered();
 
   @override
-  Future<void> insert(Expense expense) => _local.insert(expense);
+  Future<void> insert(Expense expense) async {
+    final withMeta = expense.copyWith(
+      updatedAt: DateTime.now(),
+      syncStatus: ExpenseSyncStatus.pending,
+    );
+    final localId = await _local.insert(withMeta);
+    final inserted = withMeta.copyWith(id: localId);
+
+    final sync = _sync;
+    if (sync != null) {
+      await sync.pushOne(inserted, onDataChanged: onDataChanged);
+    }
+  }
 
   @override
   Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(
@@ -62,11 +84,11 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
     required String amountText,
     required String note,
   }) async {
-    // Try real API first, fall back to mock on any error
     try {
       return await _aiApi.suggestCategory(
         amountText: amountText,
         note: note,
+        accessToken: _accessToken?.call(),
       );
     } catch (e) {
       // ignore: avoid_print
@@ -88,6 +110,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
       year: year,
       month: month,
       totals: totals,
+      accessToken: _accessToken?.call(),
     );
   }
 }

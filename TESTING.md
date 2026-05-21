@@ -45,10 +45,11 @@ flutter test
 ### 1. OCR（Phase 2 重点）
 
 1. 准备 1–2 张香港收据照片（的士、大家乐等）
-2. 导入模拟器相册：
+2. 导入模拟器相册（项目已自带测试图）：
    ```bash
-   xcrun simctl addmedia booted /path/to/receipt.jpg
+   ./scripts/import-test-receipts-ios.sh
    ```
+   含 `IMG_0060`（的士小票）、`IMG_0064`（支付截图）；`run-ios.sh` 启动时会自动导入。
 3. App → **记一笔** → 相机图标 → **从相册选择**（模拟器无真机相机）
 4. 确认识别金额与商户，保存一笔
 
@@ -57,7 +58,7 @@ flutter test
 ### 2. AI 功能
 
 1. 首页 **支出** → 右上角 **设置** → 打开 **AI 演示模式**
-2. **记一笔** → **AI 自动分类**（需网络，走 Vercel API；服务端需配置 `DEEPSEEK_API_KEY`，见 [docs/API-DEPLOY.md](docs/API-DEPLOY.md)）
+2. **记一笔** → **AI 自动分类**（需网络，走 Vercel API；服务端需配置 `DEEPSEEK_API_KEY`，见 [docs/API-DEPLOY.md](docs/API-DEPLOY.md)；鉴权说明见 [docs/API-AUTH.md](docs/API-AUTH.md)）
 3. **报表** → **AI 月报洞察**
 
 ### 3. Android（可选）

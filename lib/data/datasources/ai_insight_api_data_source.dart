@@ -16,6 +16,7 @@ class AiInsightApiDataSource {
     required int year,
     required int month,
     required Map<String, double> totals,
+    String? accessToken,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/insight');
 
@@ -25,9 +26,14 @@ class AiInsightApiDataSource {
       intTotals[e.key] = (e.value * 100).round();
     }
 
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (accessToken != null && accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({
         'year': year,
         'month': month,

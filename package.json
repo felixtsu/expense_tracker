@@ -4,5 +4,8 @@
   "description": "Vercel serverless API for expense tracker AI (DeepSeek)",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
   }
 }

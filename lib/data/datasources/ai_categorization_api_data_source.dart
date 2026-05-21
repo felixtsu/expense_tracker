@@ -16,12 +16,18 @@ class AiCategorizationApiDataSource {
   Future<ExpenseCategory> suggestCategory({
     required String amountText,
     required String note,
+    String? accessToken,
   }) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/api/categorize');
 
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (accessToken != null && accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: jsonEncode({'amount': amountText, 'note': note}),
     );
 

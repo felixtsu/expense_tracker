@@ -1,14 +1,17 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/supabase_config.dart';
 import '../../data/subscription_service.dart';
-import '../../domain/entities/expense_category.dart';
+import '../../data/sync_service.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../providers/app_providers.dart';
+import '../sync_scope.dart';
 
 class ExpenseListScreen extends StatelessWidget {
   const ExpenseListScreen({super.key});
@@ -17,28 +20,115 @@ class ExpenseListScreen extends StatelessWidget {
     return '${date.month}月${date.day}日';
   }
 
+  String _syncStatusLabel(SyncService? sync) {
+    if (!SupabaseConfig.isConfigured) return '未配置 Supabase';
+    if (sync == null) return '同步未启用';
+    return switch (sync.state) {
+      SyncState.idle => '已就绪',
+      SyncState.syncing => '同步中…',
+      SyncState.error => '同步失败',
+    };
+  }
+
   Future<void> _openSettings(BuildContext context) async {
     final sub = context.read<SubscriptionService>();
+    final sync = SyncScope.maybeOf(context);
+    final listController = context.read<ExpenseListController>();
     if (!context.mounted) return;
     await showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
+          Widget settingsBody() {
+            return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('AI 演示模式'),
+                    subtitle: const Text(
+                      '跳过订阅限制，用于测试 AI 分类、月报洞察与云同步',
+                    ),
+                    value: sub.isDemoMode,
+                    onChanged: (enabled) async {
+                      if (enabled) {
+                        await sub.enableDemoMode();
+                      } else {
+                        await sub.disableDemoMode();
+                      }
+                      if (sync != null && sub.canUseCloudSync) {
+                        await sync.syncNow(
+                          onDataChanged: listController.load,
+                        );
+                      }
+                      setDialogState(() {});
+                    },
+                  ),
+                  if (SupabaseConfig.isConfigured) ...[
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('云同步'),
+                      subtitle: Text(
+                        '${_syncStatusLabel(sync)}\n'
+                        'Pro：${sub.isAiProActive ? "是" : "否"}',
+                      ),
+                    ),
+                    if (sync != null && sub.canUseCloudSync)
+                      TextButton(
+                        onPressed: sync.state == SyncState.syncing
+                            ? null
+                            : () async {
+                                await sync.syncNow(
+                                  onDataChanged: listController.load,
+                                );
+                                setDialogState(() {});
+                              },
+                        child: const Text('立即同步'),
+                      ),
+                  ],
+                  if (kDebugMode && SupabaseConfig.isConfigured) ...[
+                    const Divider(),
+                    TextButton(
+                      onPressed: () async {
+                        const secret = String.fromEnvironment('DEV_PRO_SECRET');
+                        if (secret.isEmpty) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  '请用 --dart-define=DEV_PRO_SECRET=... 构建',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
+                        final ok = await sub.activateProForDev(secret: secret);
+                        if (sync != null && ok) {
+                          await sync.syncNow(
+                            onDataChanged: listController.load,
+                          );
+                        }
+                        setDialogState(() {});
+                      },
+                      child: const Text('开发：激活 Pro（服务端）'),
+                    ),
+                  ],
+                ],
+            );
+          }
+
           return AlertDialog(
             title: const Text('设置'),
-            content: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('AI 演示模式'),
-              subtitle: const Text('跳过订阅限制，用于测试 AI 分类与月报洞察'),
-              value: sub.isDemoMode,
-              onChanged: (enabled) async {
-                if (enabled) {
-                  await sub.enableDemoMode();
-                } else {
-                  await sub.disableDemoMode();
-                }
-                setDialogState(() {});
-              },
+            content: SingleChildScrollView(
+              child: sync != null
+                  ? ListenableBuilder(
+                      listenable: sync,
+                      builder: (_, __) => settingsBody(),
+                    )
+                  : settingsBody(),
             ),
             actions: [
               TextButton(

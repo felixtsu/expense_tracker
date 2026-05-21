@@ -11,11 +11,21 @@
 
 详见 [docs/OCR-DEVELOPMENT.md](docs/OCR-DEVELOPMENT.md)
 
-## 云同步与 IAP（规划中）
+## 云同步与 IAP（进行中）
 
-**方案已定：** 无用户注册；Supabase 匿名登录；IAP 解锁 Pro 与云同步；换机通过恢复购买迁移数据。
+**方案：** 无用户注册；Supabase 匿名登录；Pro 解锁云同步 + AI；换机迁移见设计文档阶段 2。
 
-详见 [docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md) · 待办 [TODO.md](TODO.md)
+- 设计：[docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md)
+- Supabase 配置：[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)
+- 待办：[TODO.md](TODO.md)
+
+构建示例：
+
+```bash
+SUPABASE_URL=https://xxx.supabase.co \
+SUPABASE_ANON_KEY=eyJ... \
+./scripts/run-ios.sh
+```
 
 ## 技术栈
 
