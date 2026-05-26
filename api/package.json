@@ -1,0 +1,11 @@
+{
+  "name": "expense-tracker-api",
+  "private": true,
+  "description": "Vercel serverless API for the Expense Tracker workshop demo",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  }
+}
