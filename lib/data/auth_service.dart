@@ -6,7 +6,8 @@ import '../core/supabase_config.dart';
 /// Ensures an anonymous Supabase session (no login UI).
 class AuthService {
   AuthService({SupabaseClient? client})
-      : _client = client ?? (SupabaseConfig.isConfigured ? Supabase.instance.client : null);
+      : _client = client ??
+            (SupabaseConfig.isConfigured ? Supabase.instance.client : null);
 
   final SupabaseClient? _client;
 

@@ -1,25 +1,88 @@
-# Expense Tracker — Flutter 记账 APP
+# Expense Tracker — Flutter 記帳 App
 
-香港 AI 创业教育（OPC/21days）课程示例 APP。同一代码库，同时构建 iOS + Android 双平台。
+香港 AI 創業教育 workshop demo。同一份 Flutter codebase 跑 iOS + Android，示範一個 AI 記帳 App 如何把 rich client、SQLite、Supabase、Vercel API、LLM 和 Free / Pro 分層串起來。
 
 ## 项目状态
 
-**Phase 1 完成 ✅** — 2026-05-15
-**Phase 2 进行中 🔄** — OCR 拍照识别（2026-05-19）
+**Workshop demo ready ✅** — Tier A 可直接跑；Tier B Supabase + Vercel 可按文檔配置；Tier C IAP / restore / migration 是產品設計與後續開發方向。
+
+| Tier | 狀態 | 說明 |
+|------|------|------|
+| Tier A | ✅ 可直接跑 | 本地記帳、OCR、AI 示範/降級、月報、CSV |
+| Tier B | ✅ 代碼就緒，需配置 | Supabase anonymous auth、cloud sync、Vercel JWT + Pro |
+| Tier C | 📋 設計中 | 真 IAP、restore purchase、換機資料遷移 |
+
+## 快速開始：只跑 Tier A
+
+```bash
+git clone -b feature/supabase-sync https://github.com/felixtsu/expense_tracker.git
+cd expense_tracker
+flutter pub get
+flutter test
+./scripts/run-ios.sh
+```
+
+Tier A 不需要：
+
+- Supabase
+- Vercel
+- DeepSeek / OpenRouter API key
+- Apple Developer / Google Play Console
+
+## 進階：啟用 Supabase + Vercel
+
+1. 建 Supabase project，開 Anonymous sign-ins。
+2. 在 Supabase SQL Editor 執行 [`supabase/migrations/001_sync_schema.sql`](supabase/migrations/001_sync_schema.sql)。
+3. 複製 env 模板：
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. 填入：
+
+   ```text
+   DEEPSEEK_API_KEY=...
+   SUPABASE_URL=...
+   SUPABASE_SERVICE_ROLE_KEY=...   # Vercel only
+   DEV_PRO_SECRET=...
+   API_BASE_URL=https://your-vercel-app.vercel.app
+   SUPABASE_ANON_KEY=...
+   ```
+
+5. 部署 Vercel：
+
+   ```bash
+   npm install
+   vercel
+   vercel --prod
+   ```
+
+6. 用配置後的 `.env.local` 跑 app：
+
+   ```bash
+   ./scripts/run-ios.sh
+   ```
+
+詳細流程：
+
+- [docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)
+- [docs/API-DEPLOY.md](docs/API-DEPLOY.md)
+- [docs/API-AUTH.md](docs/API-AUTH.md)
 
 ## OCR 功能（Phase 2）
 
 详见 [docs/OCR-DEVELOPMENT.md](docs/OCR-DEVELOPMENT.md)
 
-## 云同步与 IAP（进行中）
+## 云同步与 IAP
 
-**方案：** 无用户注册；Supabase 匿名登录；Pro 解锁云同步 + AI；换机迁移见设计文档阶段 2。
+**方案：** 無用戶註冊 UI；Supabase 匿名登入；Pro 解鎖雲同步 + AI；換機遷移見設計文檔階段 2。
 
 - 设计：[docs/SYNC-AND-IAP-DESIGN.md](docs/SYNC-AND-IAP-DESIGN.md)
 - Supabase 配置：[docs/SUPABASE-SETUP.md](docs/SUPABASE-SETUP.md)
 - 待办：[TODO.md](TODO.md)
 
-构建示例：
+構建示例：
 
 ```bash
 SUPABASE_URL=https://xxx.supabase.co \
@@ -27,34 +90,38 @@ SUPABASE_ANON_KEY=eyJ... \
 ./scripts/run-ios.sh
 ```
 
-## 技术栈
+## 技術棧
 
-- **框架**：Flutter 3.24.0
+- **框架**：Flutter
 - **架构**：Clean Architecture（presentation / domain / data 三层）
-- **依赖**：sqflite、fl_chart、provider、intl
+- **依賴**：sqflite、fl_chart、provider、intl、supabase_flutter
 
-## Build 产物
+## Build 產物
 
 | 平台 | 路径 | 状态 |
 |------|------|------|
 | Android | `build/app/outputs/flutter-apk/app-debug.apk` | ✅ |
 | iOS | `build/ios/iphonesimulator/Runner.app` | ✅ |
 
-## 功能清单
+## 功能清單
 
 | 功能 | 状态 | 说明 |
 |------|------|------|
 | 支出列表 | ✅ | 首页展示所有支出记录 |
 | 添加支出 | ✅ | 金额/类别/备注/日期 |
-| AI Mock 分类 | ✅ | 随机返回类别（控制台打印 OpenAI Prompt）|
+| OCR 拍照识别 | ✅ | iOS Vision / Android ML Kit |
+| AI 分类 | ✅ | Vercel API，失败时本地 mock fallback |
 | 月度报表 | ✅ | 饼图 + 分类占比 |
+| AI 月报洞察 | ✅ | Vercel API |
 | 数据持久化 | ✅ | SQLite 本地存储 |
 | 导出 CSV | ✅ | 导出按钮 |
+| Supabase 云同步 | ✅ | 需配置 Supabase + Pro/demo |
+| 真 IAP / restore | 📋 | 后续开发 |
 
 ## iOS / Android 双平台构建
 
 ```bash
-cd expense_tracker_app
+cd expense_tracker
 
 # Android
 flutter build apk --debug

@@ -1,0 +1,40 @@
+---
+description: AI building workflow for beginner-friendly Cursor prompts
+alwaysApply: true
+---
+
+# AI Building Workflow
+
+When the user describes a feature, do not jump straight into code unless the request is clearly small.
+
+## Default Flow
+
+1. Restate the user goal in product language.
+2. Identify whether the work belongs to rich client, backend/cloud, AI layer, or business model.
+3. Choose top-down or bottom-up:
+   - Top-down: plan pages, content, navigation, data flow, then generate mock UI.
+   - Bottom-up: implement one core function, then layer more functions and UI polish.
+4. List the files likely to change.
+5. Implement the smallest useful step.
+6. Verify with tests or a clear manual check.
+
+## Beginner Prompt Compatibility
+
+- Accept natural-language feature descriptions.
+- Ask for missing product decisions only when required.
+- Keep terms aligned with the workshop:
+  - rich client
+  - backend/cloud
+  - AI layer
+  - business model
+  - Free / Pro
+  - demo mode
+  - local-first
+
+## Do Not Drift
+
+- Do not replace Flutter with React Native, SwiftUI, or a web app unless explicitly asked.
+- Do not replace Supabase/Vercel/OpenRouter with unrelated services unless explicitly asked.
+- Do not make AI features mandatory for core local expense tracking.
+- Do not build production IAP without discussing Apple/Google enrollment, products, receipt validation, restore purchase, and store review.
+

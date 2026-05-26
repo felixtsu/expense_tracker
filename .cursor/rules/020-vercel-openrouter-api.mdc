@@ -1,0 +1,43 @@
+---
+description: Vercel serverless and OpenRouter/LLM API rules
+globs:
+  - "api/**/*.js"
+  - "lib/data/datasources/*api*"
+alwaysApply: false
+---
+
+# Vercel / OpenRouter API Rules
+
+## Secret Handling
+
+- Never expose provider API keys to Flutter.
+- Keep LLM provider keys in Vercel environment variables.
+- Supabase service role keys must only be used server-side.
+
+## API Shape
+
+- Keep AI endpoints small and purpose-specific.
+- Existing endpoints:
+  - `/api/categorize` for category suggestion.
+  - `/api/insight` for monthly spending insight.
+  - `/api/me` for identity / entitlement.
+  - `/api/dev-activate-pro` for workshop/debug activation only.
+
+## AI Output
+
+- Prefer structured JSON for classification.
+- Normalize categories against the fixed app category list.
+- Return safe fallback values when the provider response is malformed.
+- Use Hong Kong Traditional Chinese in user-facing prompts and messages.
+
+## Pro / Demo
+
+- Real AI calls should respect entitlement or quota rules when enabled.
+- Workshop demo mode should avoid blocking Tier A learners.
+- Do not make Tier A depend on a working Vercel deployment.
+
+## Error Handling
+
+- Return clear JSON errors from API routes.
+- Do not leak secrets, stack traces, provider raw errors, or service role details to clients.
+

@@ -10,7 +10,7 @@ import '../core/supabase_config.dart';
 
 /// Manages IAP / Pro entitlement and AI quota.
 /// [isDemoMode] bypasses checks for Workshop; server [isPro] from Supabase profiles.
-class SubscriptionService {
+class SubscriptionService extends ChangeNotifier {
   SubscriptionService._(this._prefs, {SupabaseClient? supabase})
       : _supabase = supabase;
 
@@ -44,24 +44,27 @@ class SubscriptionService {
 
   String? checkAiAccess() {
     if (isDemoMode) return null;
-    if (!isAiProActive) return '请订阅 AI Pro 解锁此功能';
-    if (aiCallsRemaining <= 0) return '今日 AI 调用次数已用完';
+    if (!isAiProActive) return '請訂閱 AI Pro 解鎖此功能';
+    if (aiCallsRemaining <= 0) return '今日 AI 調用次數已用完';
     return null;
   }
 
   Future<void> consumeAiCall() async {
     final remaining = aiCallsRemaining;
     await _prefs.setInt(_keyAiRemaining, remaining - 1);
+    notifyListeners();
   }
 
   Future<void> resetDailyQuota() async {
     await _prefs.setInt(_keyAiRemaining, kDailyLimit);
+    notifyListeners();
   }
 
   Future<void> enableDemoMode() async {
     await _prefs.setBool(_keyDemo, true);
     await _prefs.setBool(_keyPro, true);
     await _prefs.setInt(_keyAiRemaining, 999);
+    notifyListeners();
   }
 
   Future<void> disableDemoMode() async {
@@ -69,6 +72,7 @@ class SubscriptionService {
     await _prefs.setBool(_keyPro, false);
     await _prefs.setInt(_keyAiRemaining, 0);
     await refreshEntitlement();
+    notifyListeners();
   }
 
   /// Load `profiles.is_pro` from Supabase (or Vercel /api/me fallback).
@@ -93,6 +97,7 @@ class SubscriptionService {
         if (isPro && aiCallsRemaining <= 0) {
           await resetDailyQuota();
         }
+        notifyListeners();
         return;
       } catch (e, st) {
         debugPrint('[Subscription] Supabase profile: $e\n$st');
@@ -111,6 +116,7 @@ class SubscriptionService {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         await _prefs.setBool(_keyPro, json['is_pro'] as bool? ?? false);
+        notifyListeners();
       }
     } catch (e, st) {
       debugPrint('[Subscription] /api/me: $e\n$st');
@@ -129,11 +135,13 @@ class SubscriptionService {
       body: jsonEncode({'secret': secret, 'user_id': userId}),
     );
     if (response.statusCode != 200) {
-      debugPrint('[Subscription] dev-activate: ${response.statusCode} ${response.body}');
+      debugPrint(
+          '[Subscription] dev-activate: ${response.statusCode} ${response.body}');
       return false;
     }
     await _prefs.setBool(_keyPro, true);
     await resetDailyQuota();
+    notifyListeners();
     return true;
   }
 }

@@ -1,0 +1,44 @@
+---
+description: Supabase auth, database, RLS, and sync rules
+globs:
+  - "supabase/**/*.sql"
+  - "lib/data/**/*sync*.dart"
+  - "lib/data/**/auth*.dart"
+  - "lib/data/**/*.dart"
+alwaysApply: false
+---
+
+# Supabase Sync Rules
+
+## Role of Supabase
+
+- Supabase is Tier B / Pro infrastructure, not required for Tier A.
+- Use Supabase for anonymous auth, cloud database, RLS, and cross-device sync.
+- Do not require email/password signup for the workshop path unless explicitly requested.
+
+## Local-First Sync
+
+- Local SQLite remains the primary beginner-friendly path.
+- Sync should enhance the product, not block local usage.
+- Handle offline / unconfigured Supabase gracefully.
+
+## Security
+
+- Use RLS policies so users can only access their own rows.
+- Do not put Supabase service role keys in Flutter.
+- Keep anon keys acceptable for client usage, but enforce security via auth and RLS.
+
+## Data Model Changes
+
+- If modifying schema, update:
+  - Supabase migration SQL.
+  - Flutter models/entities.
+  - Local data source mapping.
+  - Sync logic.
+  - Tests or manual validation notes.
+
+## Entitlement
+
+- Pro status may come from Supabase `profiles.is_pro`, Vercel `/api/me`, or demo mode.
+- Demo mode is for workshop learning and should not be treated as production subscription logic.
+

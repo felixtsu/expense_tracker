@@ -1,0 +1,40 @@
+---
+description: Workshop architecture guardrails for the Expense Tracker app
+alwaysApply: true
+---
+
+# Workshop Architecture
+
+Build this app as a local-first Flutter expense tracker for beginner learners.
+
+## Product Architecture
+
+Use this mental model for every feature:
+
+1. Rich client
+   - Flutter UI, navigation, forms, local state, local SQLite, camera/photo picker, device OCR.
+   - Core expense tracking must work without Supabase, Vercel, OpenRouter, or paid accounts.
+
+2. Backend / cloud
+   - Supabase is for auth, database, RLS, and cross-device sync.
+   - Vercel serverless functions are for protecting secrets and calling AI providers.
+   - Never put LLM API keys, service role keys, or paid-provider secrets in Flutter client code.
+
+3. AI layer
+   - AI features must be optional and demo-safe.
+   - Use demo/mock mode first, then wire real APIs behind Vercel.
+   - AI outputs should be structured and explainable when possible, for example category, confidence, reason.
+
+4. Business model
+   - Free must include useful basic local functionality.
+   - Pro should unlock high-value or ongoing-cost capabilities: AI classification, AI monthly insights, cloud sync, higher quota.
+   - Expensive VLM receipt recognition should be designed as credits or an add-on, not silently free.
+
+## Teaching Constraints
+
+- Prefer simple, readable code over clever abstractions.
+- Explain changes in beginner-friendly language.
+- Before large edits, list files you plan to change and why.
+- Do not introduce new frameworks or cloud services unless explicitly requested.
+- Preserve the Tier A path: local app + demo AI mode must keep working without external accounts.
+

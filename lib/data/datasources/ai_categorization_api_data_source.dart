@@ -33,7 +33,7 @@ class AiCategorizationApiDataSource {
 
     if (response.statusCode != 200) {
       debugPrint('[categorize] HTTP ${response.statusCode}: ${response.body}');
-      throw Exception('分类服务暂时不可用 (${response.statusCode})');
+      throw Exception('分類服務暫時不可用 (${response.statusCode})');
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;

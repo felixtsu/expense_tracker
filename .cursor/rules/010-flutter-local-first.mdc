@@ -1,0 +1,41 @@
+---
+description: Flutter local-first implementation rules
+globs:
+  - "lib/**/*.dart"
+alwaysApply: false
+---
+
+# Flutter Local-First Rules
+
+## UI and State
+
+- Follow the existing Flutter structure under `lib/presentation`, `lib/domain`, and `lib/data`.
+- Put screens in `lib/presentation/screens`.
+- Keep widget code readable for workshop learners.
+- Use existing Provider-based patterns unless the user explicitly asks to change state management.
+- Keep UI copy in Hong Kong Traditional Chinese where user-visible.
+
+## Local Data
+
+- Core expense data should work locally first.
+- Use the existing repository/data-source pattern.
+- Do not require Supabase for adding, listing, reporting, or exporting local expenses.
+- If adding fields to expenses, update entity, local data source, repository mapping, and relevant tests together.
+
+## Device Capabilities
+
+- OCR/photo/camera features belong to the rich client.
+- Prefer device OCR for basic receipt text extraction because it is cheaper and privacy-friendly.
+- Always leave a manual fallback when OCR fails.
+
+## AI Features in Flutter
+
+- Flutter may call app-level AI abstractions, but should not call OpenRouter, DeepSeek, OpenAI, or other LLM APIs directly.
+- Flutter should call Vercel API endpoints or demo/mock services.
+- Keep demo mode available for workshop Tier A.
+
+## Testing
+
+- Update widget/unit tests when visible text, categories, forms, reports, or navigation change.
+- Prefer focused tests for the changed behavior.
+

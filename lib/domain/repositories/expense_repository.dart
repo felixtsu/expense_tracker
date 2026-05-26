@@ -7,7 +7,8 @@ abstract class ExpenseRepository {
   Future<void> insert(Expense expense);
 
   /// Totals per category for [year] and [month] (1–12).
-  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(int year, int month);
+  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(
+      int year, int month);
 
   /// Full CSV including header row (UTF-8).
   Future<String> exportAllAsCsv();

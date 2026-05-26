@@ -29,13 +29,8 @@ class MockExpenseRepository implements ExpenseRepository {
   Future<void> insert(Expense expense) async {}
 
   @override
-  Future<void> delete(int id) async {}
-
-  @override
-  Future<void> update(Expense expense) async {}
-
-  @override
-  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(int year, int month) async {
+  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(
+      int year, int month) async {
     final expenses = _expensesByMonth['$year-$month'] ?? [];
     final result = <ExpenseCategory, double>{};
     for (final e in expenses) {
@@ -64,7 +59,7 @@ class MockExpenseRepository implements ExpenseRepository {
 }
 
 Future<void> main() async {
-  await initializeDateFormatting('zh_CN');
+  await initializeDateFormatting('zh_HK');
 
   late MockExpenseRepository mockRepo;
   late SubscriptionService mockSub;
@@ -79,20 +74,20 @@ Future<void> main() async {
     return MultiProvider(
       providers: [
         Provider<ExpenseRepository>.value(value: mockRepo),
-        Provider<SubscriptionService>.value(value: mockSub),
+        ChangeNotifierProvider<SubscriptionService>.value(value: mockSub),
         ChangeNotifierProvider(create: (_) => ExpenseListController(mockRepo)),
         ChangeNotifierProvider(create: (_) => ShellNavigationController()),
         ChangeNotifierProvider(create: (_) => ReportMonthController()),
       ],
       child: MaterialApp(
         theme: ThemeData(useMaterial3: true),
-        locale: const Locale('zh', 'CN'),
+        locale: const Locale('zh', 'HK'),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [Locale('zh', 'CN')],
+        supportedLocales: const [Locale('zh', 'HK')],
         home: Scaffold(body: child),
       ),
     );
@@ -104,8 +99,18 @@ Future<void> main() async {
 
       // Pre-populate current month with expenses
       mockRepo.setExpensesForMonth(now.year, now.month, [
-        Expense(id: 1, amount: 100.0, category: ExpenseCategory.dining, note: '午餐', date: now),
-        Expense(id: 2, amount: 50.0, category: ExpenseCategory.transport, note: '打车', date: now),
+        Expense(
+            id: 1,
+            amount: 100.0,
+            category: ExpenseCategory.dining,
+            note: '午餐',
+            date: now),
+        Expense(
+            id: 2,
+            amount: 50.0,
+            category: ExpenseCategory.transport,
+            note: '的士',
+            date: now),
       ]);
 
       await tester.pumpWidget(
@@ -119,14 +124,15 @@ Future<void> main() async {
       expect(find.byType(PieChart), findsOneWidget);
 
       // Total amount should be shown
-      expect(find.text('合计 ¥150.00'), findsOneWidget);
+      expect(find.text('合計 HK\$150.00'), findsOneWidget);
 
       // Category legend items should be present
-      expect(find.text('餐饮'), findsWidgets);
+      expect(find.text('餐飲'), findsWidgets);
       expect(find.text('交通'), findsWidgets);
     });
 
-    testWidgets('shows empty message when no data for the month', (tester) async {
+    testWidgets('shows empty message when no data for the month',
+        (tester) async {
       final now = DateTime.now();
       // No expenses for current month
       mockRepo.setExpensesForMonth(now.year, now.month, []);
@@ -138,7 +144,7 @@ Future<void> main() async {
 
       // Should show empty state with month name
       final monthLabel = '${now.year}年${now.month}月';
-      expect(find.text('$monthLabel 暂无支出'), findsOneWidget);
+      expect(find.text('$monthLabel 暫無支出'), findsOneWidget);
 
       // No PieChart should be shown
       expect(find.byType(PieChart), findsNothing);

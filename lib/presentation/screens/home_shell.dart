@@ -35,12 +35,12 @@ class HomeShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.add_circle_outline),
             selectedIcon: Icon(Icons.add_circle),
-            label: '记一笔',
+            label: '記一筆',
           ),
           NavigationDestination(
             icon: Icon(Icons.pie_chart_outline),
             selectedIcon: Icon(Icons.pie_chart),
-            label: '报表',
+            label: '報表',
           ),
         ],
       ),

@@ -43,7 +43,7 @@ class AiInsightApiDataSource {
 
     if (response.statusCode != 200) {
       debugPrint('[insight] HTTP ${response.statusCode}: ${response.body}');
-      throw Exception('洞察服务暂时不可用 (${response.statusCode})');
+      throw Exception('洞察服務暫時不可用 (${response.statusCode})');
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;

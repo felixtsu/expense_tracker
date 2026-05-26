@@ -60,7 +60,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.photo_library),
-            title: const Text('从相册选择'),
+            title: const Text('從相簿選擇'),
             onTap: () => Navigator.pop(ctx, 'gallery'),
           ),
         ],
@@ -94,7 +94,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     try {
       final result = await _ocr.scan(xFile.path);
       if (result == null || result.amountCandidates.isEmpty) {
-        _showSnackBar('未能识别，请手动输入');
+        _showSnackBar('未能識別，請手動輸入');
         return;
       }
 
@@ -120,9 +120,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         });
       }
 
-      _showSnackBar('已识别 ${result.amountCandidates.length} 个金额，请确认');
+      _showSnackBar('已識別 ${result.amountCandidates.length} 個金額，請確認');
     } catch (e) {
-      _showSnackBar('拍照识别失败：$e');
+      _showSnackBar('拍照識別失敗：$e');
     } finally {
       if (mounted) setState(() => _scanBusy = false);
     }
@@ -137,26 +137,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('🔒 AI Pro 订阅'),
+        title: const Text('🔒 AI Pro 訂閱'),
         content: const Text(
-          'AI 自动分类是 AI Pro 功能。订阅后可解锁：\n'
-          '• 无限次 AI 分类\n'
-          '• AI 月报洞察\n'
-          '• 云端数据备份\n\n'
-          '订阅费用按实际 Token 用量计费。',
+          'AI 自動分類是 AI Pro 功能。訂閱後可解鎖：\n'
+          '• 無限次 AI 分類\n'
+          '• AI 月報洞察\n'
+          '• 雲端數據備份\n\n'
+          '訂閱費用按實際 Token 用量計費。',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('不了'),
+            child: const Text('不用了'),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               // TODO: open IAP purchase flow
-              _showSnackBar('IAP 购买流程开发中…');
+              _showSnackBar('IAP 購買流程開發中…');
             },
-            child: const Text('立即订阅'),
+            child: const Text('立即訂閱'),
           ),
         ],
       ),
@@ -181,7 +181,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       await sub.consumeAiCall();
       if (mounted) setState(() => _category = cat);
     } catch (e) {
-      if (mounted) _showSnackBar('AI 分类失败：$e');
+      if (mounted) _showSnackBar('AI 分類失敗：$e');
     } finally {
       if (mounted) setState(() => _aiBusy = false);
     }
@@ -199,7 +199,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     await context.read<ExpenseListController>().add(expense);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已保存')),
+      const SnackBar(content: Text('已儲存')),
     );
     _amountController.clear();
     _noteController.clear();
@@ -216,7 +216,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final aiBlocked = sub.checkAiAccess() != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('记一笔')),
+      appBar: AppBar(title: const Text('記一筆')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -230,16 +230,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   Expanded(
                     child: TextFormField(
                       controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
-                        labelText: '金额',
-                        prefixText: '¥ ',
+                        labelText: '金額',
+                        prefixText: 'HK\$ ',
                       ),
                       validator: (v) {
                         final t = v?.trim() ?? '';
-                        if (t.isEmpty) return '请输入金额';
+                        if (t.isEmpty) return '請輸入金額';
                         final n = double.tryParse(t);
-                        if (n == null || n <= 0) return '请输入有效正数';
+                        if (n == null || n <= 0) return '請輸入有效正數';
                         return null;
                       },
                     ),
@@ -247,7 +248,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   const SizedBox(width: 12),
                   IconButton.filled(
                     onPressed: _scanBusy ? null : _scanReceipt,
-                    tooltip: '拍照识别收据（免费）',
+                    tooltip: '拍照識別收據（免費）',
                     icon: _scanBusy
                         ? const SizedBox(
                             width: 20,
@@ -263,7 +264,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '📷 拍照识别收据 — 完全免费，无需网络',
+                '📷 拍照識別收據 — 完全免費，無需網絡',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -272,8 +273,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
               // Category dropdown
               DropdownButtonFormField<ExpenseCategory>(
-                value: _category,
-                decoration: const InputDecoration(labelText: '类别'),
+                initialValue: _category,
+                decoration: const InputDecoration(labelText: '類別'),
                 items: ExpenseCategory.values
                     .map(
                       (c) => DropdownMenuItem(
@@ -293,7 +294,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 controller: _noteController,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  labelText: '备注',
+                  labelText: '備註',
                   alignLabelWithHint: true,
                 ),
               ),
@@ -303,12 +304,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('日期'),
-                subtitle: Text(DateFormat.yMMMd('zh_CN').format(_date)),
+                subtitle: Text(DateFormat.yMMMd('zh_HK').format(_date)),
                 trailing: const Icon(Icons.calendar_month_outlined),
                 onTap: _pickDate,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                  side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant),
                 ),
               ),
               const SizedBox(height: 16),
@@ -318,7 +320,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 OutlinedButton.icon(
                   onPressed: _showAiProPrompt,
                   icon: const Icon(Icons.lock),
-                  label: const Text('🔒 AI 自动分类（AI Pro）'),
+                  label: const Text('🔒 AI 自動分類（AI Pro）'),
                 )
               else
                 OutlinedButton.icon(
@@ -330,13 +332,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.auto_awesome),
-                  label: Text(_aiBusy ? 'AI 分类中…' : '✨ AI 自动分类'),
+                  label: Text(_aiBusy ? 'AI 分類中…' : '✨ AI 自動分類'),
                 ),
               const SizedBox(height: 8),
               Text(
                 aiBlocked
-                    ? '订阅 AI Pro 解锁 AI 分类、月报洞察、云端备份'
-                    : '通过 AI 分析金额和备注，自动推荐最合适的分类',
+                    ? '訂閱 AI Pro 解鎖 AI 分類、月報洞察、雲端備份'
+                    : '透過 AI 分析金額和備註，自動推薦最合適的分類',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -348,7 +350,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 onPressed: _submit,
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text('保存'),
+                  child: Text('儲存'),
                 ),
               ),
             ],
@@ -373,9 +375,8 @@ class _AmountCandidateSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final likelyTotals =
         candidates.where((c) => c.isLikelyTotal && !c.isSuspicious).toList();
-    final others = candidates
-        .where((c) => !c.isLikelyTotal || c.isSuspicious)
-        .toList();
+    final others =
+        candidates.where((c) => !c.isLikelyTotal || c.isSuspicious).toList();
 
     return SafeArea(
       child: Padding(
@@ -389,7 +390,7 @@ class _AmountCandidateSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                '请确认这笔金额',
+                '請確認這筆金額',
                 style: theme.textTheme.titleMedium,
               ),
             ),
@@ -401,7 +402,7 @@ class _AmountCandidateSheet extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        '推荐（合计行）',
+                        '推薦（合計行）',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.primary,
                         ),
@@ -415,7 +416,7 @@ class _AmountCandidateSheet extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        '其他金额',
+                        '其他金額',
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: theme.colorScheme.outline,
                         ),
@@ -432,7 +433,7 @@ class _AmountCandidateSheet extends StatelessWidget {
                 Icons.edit_outlined,
                 color: theme.colorScheme.outline,
               ),
-              title: const Text('手动输入金额…'),
+              title: const Text('手動輸入金額…'),
               onTap: onCustomInput,
             ),
             const SizedBox(height: 8),
@@ -469,7 +470,7 @@ class _AmountCandidateSheet extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('¥ ${c.value}'),
+          Text('HK\$ ${c.value}'),
           if (c.context != null && c.context != c.raw)
             Text(
               c.context!,
@@ -479,7 +480,7 @@ class _AmountCandidateSheet extends StatelessWidget {
             ),
           if (c.isSuspicious)
             Text(
-              '疑似日期，不推荐',
+              '疑似日期，不推薦',
               style: theme.textTheme.bodySmall?.copyWith(color: warningColor),
             ),
         ],

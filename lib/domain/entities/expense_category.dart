@@ -21,13 +21,13 @@ enum ExpenseCategory {
       };
 
   String get label => switch (this) {
-        ExpenseCategory.dining => '餐饮',
+        ExpenseCategory.dining => '餐飲',
         ExpenseCategory.transport => '交通',
-        ExpenseCategory.shopping => '购物',
+        ExpenseCategory.shopping => '購物',
         ExpenseCategory.housing => '居住',
-        ExpenseCategory.medical => '医疗',
+        ExpenseCategory.medical => '醫療',
         ExpenseCategory.education => '教育',
-        ExpenseCategory.entertainment => '娱乐',
+        ExpenseCategory.entertainment => '娛樂',
         ExpenseCategory.other => '其他',
       };
 

@@ -2,11 +2,11 @@ const { chatCompletion } = require('./_lib/deepseek');
 const { setCors, handleOptions, parseBody } = require('./_lib/http');
 const { requirePro } = require('./_lib/supabase');
 
-const SYSTEM = `你是香港用户的个人理财助手。根据用户某月的分类支出汇总，用简体中文写 2–3 句简短洞察。
-要求：语气友好、具体、可执行；不要罗列数字表格；不要 markdown；总字数 80–150 字。`;
+const SYSTEM = `你是香港用戶的個人理財助手。根據用戶某月的分類支出總結，用香港繁體中文寫 2–3 句簡短洞察。
+要求：語氣友好、具體、可執行；不要羅列數字表格；不要 markdown；總字數 80–150 字。`;
 
 function formatTotals(totals) {
-  if (!totals || typeof totals !== 'object') return '（无支出数据）';
+  if (!totals || typeof totals !== 'object') return '（無支出數據）';
   const lines = [];
   for (const [label, cents] of Object.entries(totals)) {
     const n = Number(cents);
@@ -14,7 +14,7 @@ function formatTotals(totals) {
     const dollars = (n / 100).toFixed(2);
     lines.push(`${label}：HK$${dollars}`);
   }
-  return lines.length ? lines.join('\n') : '（无支出数据）';
+  return lines.length ? lines.join('\n') : '（無支出數據）';
 }
 
 module.exports = async function handler(req, res) {
@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
   try {
     const insight = await chatCompletion({
       system: SYSTEM,
-      user: `${year}年${month}月支出汇总（单位：港币）：\n${summary}`,
+      user: `${year}年${month}月支出總結（單位：港幣）：\n${summary}`,
       jsonMode: false,
     });
 
@@ -50,7 +50,7 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     console.error('[insight]', err);
     return res.status(500).json({
-      error: '洞察服务暂时不可用',
+      error: '洞察服務暫時不可用',
       detail: err.message,
     });
   }

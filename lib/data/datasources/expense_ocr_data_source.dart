@@ -17,7 +17,7 @@ class AmountCandidate {
   /// Full line context, e.g. "Total: HK\$47.40".
   final String? context;
 
-  /// Line contains total/总计/合计/金额/总额/实付/应付/小计 keywords.
+  /// Line contains total/總計/合計/金額/總額/實付/應付/小計 keywords.
   final bool isLikelyTotal;
 
   /// Value looks like a calendar year (1900~2100 with .00).
@@ -81,7 +81,7 @@ int _sortCandidates(AmountCandidate a, AmountCandidate b) {
 }
 
 final _totalLinePattern = RegExp(
-  r'(?:total|amount|總(?:額|计|計)|合计|总计|金额|总额|实付|应付|小计|小計)',
+  r'(?:total|amount|總(?:額|计|計)|合計|總計|金額|總額|實付|應付|小計|小計)',
   caseSensitive: false,
 );
 

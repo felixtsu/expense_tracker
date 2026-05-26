@@ -87,7 +87,8 @@ CREATE TABLE $_table (
   }
 
   Future<void> insertFromRemote(Expense expense) async {
-    await _db.insert(_table, _toRow(expense.copyWith(syncStatus: ExpenseSyncStatus.synced)));
+    await _db.insert(
+        _table, _toRow(expense.copyWith(syncStatus: ExpenseSyncStatus.synced)));
   }
 
   Future<void> updateFromRemote(Expense expense) async {

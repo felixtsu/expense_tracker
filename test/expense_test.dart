@@ -15,8 +15,8 @@ void main() {
       }
     });
 
-    test('dining label is 餐饮', () {
-      expect(ExpenseCategory.dining.label, '餐饮');
+    test('dining label is 餐飲', () {
+      expect(ExpenseCategory.dining.label, '餐飲');
     });
 
     test('fromIndex clamps to valid range', () {
@@ -53,15 +53,15 @@ void main() {
         id: 1,
         amount: 100.0,
         category: ExpenseCategory.shopping,
-        note: '购物',
+        note: '購物',
         date: DateTime(2026, 5, 1),
       );
 
-      final updated = original.copyWith(amount: 200.0, note: '更新后的购物');
+      final updated = original.copyWith(amount: 200.0, note: '更新後的購物');
 
       expect(updated.id, 1);
       expect(updated.amount, 200.0);
-      expect(updated.note, '更新后的购物');
+      expect(updated.note, '更新後的購物');
       expect(updated.category, ExpenseCategory.shopping);
       expect(updated.date, DateTime(2026, 5, 1));
     });
@@ -70,7 +70,7 @@ void main() {
       final original = Expense(
         amount: 50.0,
         category: ExpenseCategory.transport,
-        note: '打车',
+        note: '的士',
         date: DateTime(2026, 5, 10),
       );
 

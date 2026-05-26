@@ -26,18 +26,8 @@ class MockExpenseRepository implements ExpenseRepository {
   }
 
   @override
-  Future<void> delete(int id) async {
-    _expenses.removeWhere((e) => e.id == id);
-  }
-
-  @override
-  Future<void> update(Expense expense) async {
-    final idx = _expenses.indexWhere((e) => e.id == expense.id);
-    if (idx >= 0) _expenses[idx] = expense;
-  }
-
-  @override
-  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(int year, int month) async {
+  Future<Map<ExpenseCategory, double>> monthlyTotalsByCategory(
+      int year, int month) async {
     final result = <ExpenseCategory, double>{};
     for (final e in _expenses) {
       if (e.date.year == year && e.date.month == month) {
@@ -51,7 +41,8 @@ class MockExpenseRepository implements ExpenseRepository {
   Future<String> exportAllAsCsv() async {
     final buf = StringBuffer('id,amount,category,note,date\n');
     for (final e in _expenses) {
-      buf.writeln('${e.id},${e.amount},${e.category.label},${e.note},${e.date}');
+      buf.writeln(
+          '${e.id},${e.amount},${e.category.label},${e.note},${e.date}');
     }
     return buf.toString();
   }
@@ -73,7 +64,7 @@ class MockExpenseRepository implements ExpenseRepository {
 }
 
 Future<void> main() async {
-  await initializeDateFormatting('zh_CN');
+  await initializeDateFormatting('zh_HK');
 
   late MockExpenseRepository mockRepo;
   late SubscriptionService mockSub;
@@ -88,20 +79,20 @@ Future<void> main() async {
     return MultiProvider(
       providers: [
         Provider<ExpenseRepository>.value(value: mockRepo),
-        Provider<SubscriptionService>.value(value: mockSub),
+        ChangeNotifierProvider<SubscriptionService>.value(value: mockSub),
         ChangeNotifierProvider(create: (_) => ExpenseListController(mockRepo)),
         ChangeNotifierProvider(create: (_) => ShellNavigationController()),
         ChangeNotifierProvider(create: (_) => ReportMonthController()),
       ],
       child: MaterialApp(
         theme: ThemeData(useMaterial3: true),
-        locale: const Locale('zh', 'CN'),
+        locale: const Locale('zh', 'HK'),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [Locale('zh', 'CN')],
+        supportedLocales: const [Locale('zh', 'HK')],
         home: Scaffold(body: child),
       ),
     );
@@ -115,14 +106,16 @@ Future<void> main() async {
       // Amount field
       expect(find.byType(TextFormField), findsWidgets);
       // Category dropdown
-      expect(find.byType(DropdownButtonFormField<ExpenseCategory>), findsOneWidget);
+      expect(find.byType(DropdownButtonFormField<ExpenseCategory>),
+          findsOneWidget);
       // Note field
       expect(find.byType(TextFormField), findsNWidgets(2)); // amount + note
       // Save button
-      expect(find.widgetWithText(FilledButton, '保存'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, '儲存'), findsOneWidget);
     });
 
-    testWidgets('camera button is visible next to amount field', (tester) async {
+    testWidgets('camera button is visible next to amount field',
+        (tester) async {
       await tester.pumpWidget(buildTestableWidget(const AddExpenseScreen()));
       await tester.pumpAndSettle();
 
@@ -131,7 +124,7 @@ Future<void> main() async {
 
       // Tooltip confirms it's the receipt scanner
       final cameraBtn = find.byWidgetPredicate(
-        (w) => w is IconButton && w.tooltip?.contains('拍照识别收据') == true,
+        (w) => w is IconButton && w.tooltip?.contains('拍照識別收據') == true,
       );
       expect(cameraBtn, findsOneWidget);
     });
@@ -173,11 +166,11 @@ Future<void> main() async {
       await tester.pumpAndSettle();
 
       // Tap save
-      await tester.tap(find.widgetWithText(FilledButton, '保存'));
+      await tester.tap(find.widgetWithText(FilledButton, '儲存'));
       await tester.pumpAndSettle();
 
-      // SnackBar "已保存" should appear
-      expect(find.text('已保存'), findsOneWidget);
+      // SnackBar "已儲存" should appear
+      expect(find.text('已儲存'), findsOneWidget);
     });
   });
 }

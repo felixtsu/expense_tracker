@@ -116,6 +116,7 @@ class SyncService extends ChangeNotifier {
       }
     }
 
-    await _prefs.setString(_lastSyncKey, DateTime.now().toUtc().toIso8601String());
+    await _prefs.setString(
+        _lastSyncKey, DateTime.now().toUtc().toIso8601String());
   }
 }

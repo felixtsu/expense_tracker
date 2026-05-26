@@ -21,12 +21,12 @@ class ExpenseListScreen extends StatelessWidget {
   }
 
   String _syncStatusLabel(SyncService? sync) {
-    if (!SupabaseConfig.isConfigured) return '未配置 Supabase';
-    if (sync == null) return '同步未启用';
+    if (!SupabaseConfig.isConfigured) return '未設定 Supabase';
+    if (sync == null) return '同步未啟用';
     return switch (sync.state) {
-      SyncState.idle => '已就绪',
+      SyncState.idle => '已準備好',
       SyncState.syncing => '同步中…',
-      SyncState.error => '同步失败',
+      SyncState.error => '同步失敗',
     };
   }
 
@@ -41,87 +41,87 @@ class ExpenseListScreen extends StatelessWidget {
         builder: (context, setDialogState) {
           Widget settingsBody() {
             return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SwitchListTile(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('AI 示範模式'),
+                  subtitle: const Text(
+                    '跳過訂閱限制，用於測試 AI 分類、月報洞察與雲端同步',
+                  ),
+                  value: sub.isDemoMode,
+                  onChanged: (enabled) async {
+                    if (enabled) {
+                      await sub.enableDemoMode();
+                    } else {
+                      await sub.disableDemoMode();
+                    }
+                    if (sync != null && sub.canUseCloudSync) {
+                      await sync.syncNow(
+                        onDataChanged: listController.load,
+                      );
+                    }
+                    setDialogState(() {});
+                  },
+                ),
+                if (SupabaseConfig.isConfigured) ...[
+                  const Divider(),
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('AI 演示模式'),
-                    subtitle: const Text(
-                      '跳过订阅限制，用于测试 AI 分类、月报洞察与云同步',
+                    title: const Text('雲端同步'),
+                    subtitle: Text(
+                      '${_syncStatusLabel(sync)}\n'
+                      'Pro：${sub.isAiProActive ? "是" : "否"}',
                     ),
-                    value: sub.isDemoMode,
-                    onChanged: (enabled) async {
-                      if (enabled) {
-                        await sub.enableDemoMode();
-                      } else {
-                        await sub.disableDemoMode();
+                  ),
+                  if (sync != null && sub.canUseCloudSync)
+                    TextButton(
+                      onPressed: sync.state == SyncState.syncing
+                          ? null
+                          : () async {
+                              await sync.syncNow(
+                                onDataChanged: listController.load,
+                              );
+                              setDialogState(() {});
+                            },
+                      child: const Text('立即同步'),
+                    ),
+                ],
+                if (kDebugMode && SupabaseConfig.isConfigured) ...[
+                  const Divider(),
+                  TextButton(
+                    onPressed: () async {
+                      const secret = String.fromEnvironment('DEV_PRO_SECRET');
+                      if (secret.isEmpty) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '請用 --dart-define=DEV_PRO_SECRET=... 建置',
+                              ),
+                            ),
+                          );
+                        }
+                        return;
                       }
-                      if (sync != null && sub.canUseCloudSync) {
+                      final ok = await sub.activateProForDev(secret: secret);
+                      if (sync != null && ok) {
                         await sync.syncNow(
                           onDataChanged: listController.load,
                         );
                       }
                       setDialogState(() {});
                     },
+                    child: const Text('開發：啟用 Pro（伺服器端）'),
                   ),
-                  if (SupabaseConfig.isConfigured) ...[
-                    const Divider(),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('云同步'),
-                      subtitle: Text(
-                        '${_syncStatusLabel(sync)}\n'
-                        'Pro：${sub.isAiProActive ? "是" : "否"}',
-                      ),
-                    ),
-                    if (sync != null && sub.canUseCloudSync)
-                      TextButton(
-                        onPressed: sync.state == SyncState.syncing
-                            ? null
-                            : () async {
-                                await sync.syncNow(
-                                  onDataChanged: listController.load,
-                                );
-                                setDialogState(() {});
-                              },
-                        child: const Text('立即同步'),
-                      ),
-                  ],
-                  if (kDebugMode && SupabaseConfig.isConfigured) ...[
-                    const Divider(),
-                    TextButton(
-                      onPressed: () async {
-                        const secret = String.fromEnvironment('DEV_PRO_SECRET');
-                        if (secret.isEmpty) {
-                          if (ctx.mounted) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  '请用 --dart-define=DEV_PRO_SECRET=... 构建',
-                                ),
-                              ),
-                            );
-                          }
-                          return;
-                        }
-                        final ok = await sub.activateProForDev(secret: secret);
-                        if (sync != null && ok) {
-                          await sync.syncNow(
-                            onDataChanged: listController.load,
-                          );
-                        }
-                        setDialogState(() {});
-                      },
-                      child: const Text('开发：激活 Pro（服务端）'),
-                    ),
-                  ],
                 ],
+              ],
             );
           }
 
           return AlertDialog(
-            title: const Text('设置'),
+            title: const Text('設定'),
             content: SingleChildScrollView(
               child: sync != null
                   ? ListenableBuilder(
@@ -133,7 +133,7 @@ class ExpenseListScreen extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('关闭'),
+                child: const Text('關閉'),
               ),
             ],
           );
@@ -153,11 +153,11 @@ class ExpenseListScreen extends StatelessWidget {
       await file.writeAsString(csv, flush: true);
       if (!context.mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('已导出 CSV：\n${file.path}')),
+        SnackBar(content: Text('已匯出 CSV：\n${file.path}')),
       );
     } catch (e) {
       if (!context.mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('导出失败：$e')));
+      messenger.showSnackBar(SnackBar(content: Text('匯出失敗：$e')));
     }
   }
 
@@ -165,19 +165,19 @@ class ExpenseListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final listState = context.watch<ExpenseListController>();
     final nav = context.read<ShellNavigationController>();
-    final currency = NumberFormat.currency(locale: 'zh_CN', symbol: '¥');
+    final currency = NumberFormat.currency(locale: 'zh_HK', symbol: 'HK\$');
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('支出'),
         actions: [
           IconButton(
-            tooltip: '设置',
+            tooltip: '設定',
             onPressed: () => _openSettings(context),
             icon: const Icon(Icons.settings_outlined),
           ),
           IconButton(
-            tooltip: '导出 CSV',
+            tooltip: '匯出 CSV',
             onPressed: () => _exportCsv(context),
             icon: const Icon(Icons.download_outlined),
           ),
@@ -191,7 +191,7 @@ class ExpenseListScreen extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text(
-          '记一笔',
+          '記一筆',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -207,7 +207,7 @@ class ExpenseListScreen extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (listState.error != null) {
-      return Center(child: Text('加载失败：${listState.error}'));
+      return Center(child: Text('載入失敗：${listState.error}'));
     }
     final items = listState.expenses;
     if (items.isEmpty) {
@@ -224,14 +224,14 @@ class ExpenseListScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                '还没有任何支出记录',
+                '還沒有任何支出記錄',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                '点击下方「记一笔」添加第一笔支出吧',
+                '點擊下方「記一筆」新增第一筆支出吧',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     ),

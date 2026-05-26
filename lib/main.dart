@@ -25,7 +25,7 @@ import 'presentation/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('zh_CN');
+  await initializeDateFormatting('zh_HK');
 
   if (SupabaseConfig.isConfigured) {
     await Supabase.initialize(
@@ -104,7 +104,9 @@ class ExpenseTrackerApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<ExpenseRepository>.value(value: repository),
-        Provider<SubscriptionService>.value(value: subscriptionService),
+        ChangeNotifierProvider<SubscriptionService>.value(
+          value: subscriptionService,
+        ),
         ChangeNotifierProvider<ExpenseListController>.value(
           value: listController,
         ),
@@ -117,16 +119,16 @@ class ExpenseTrackerApp extends StatelessWidget {
           title: 'Expense Tracker',
           theme: buildAppTheme(),
           home: const HomeShell(),
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('zh', 'CN'),
-          Locale('en', 'US'),
-        ],
-          locale: const Locale('zh', 'CN'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('zh', 'HK'),
+            Locale('en', 'US'),
+          ],
+          locale: const Locale('zh', 'HK'),
         ),
       ),
     );

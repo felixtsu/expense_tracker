@@ -27,14 +27,14 @@ async function requirePro(req, res) {
 
   const token = getBearerToken(req);
   if (!token) {
-    res.status(401).json({ error: '需要登录（Bearer JWT）' });
+    res.status(401).json({ error: '需要登入（Bearer JWT）' });
     return null;
   }
 
   const client = getServiceClient();
   const { data, error } = await client.auth.getUser(token);
   if (error || !data?.user) {
-    res.status(401).json({ error: '无效或过期的登录' });
+    res.status(401).json({ error: '無效或過期的登入' });
     return null;
   }
 
@@ -47,13 +47,13 @@ async function requirePro(req, res) {
 
   if (profileErr) {
     console.error('[auth] profile', profileErr);
-    res.status(500).json({ error: '无法读取订阅状态' });
+    res.status(500).json({ error: '無法讀取訂閱狀態' });
     return null;
   }
 
   const isPro = profile?.is_pro === true;
   if (!isPro) {
-    res.status(403).json({ error: '需要 AI Pro 订阅' });
+    res.status(403).json({ error: '需要 AI Pro 訂閱' });
     return null;
   }
 
@@ -70,14 +70,14 @@ async function getUserFromToken(req, res) {
 
   const token = getBearerToken(req);
   if (!token) {
-    res.status(401).json({ error: '需要登录（Bearer JWT）' });
+    res.status(401).json({ error: '需要登入（Bearer JWT）' });
     return null;
   }
 
   const client = getServiceClient();
   const { data, error } = await client.auth.getUser(token);
   if (error || !data?.user) {
-    res.status(401).json({ error: '无效或过期的登录' });
+    res.status(401).json({ error: '無效或過期的登入' });
     return null;
   }
 

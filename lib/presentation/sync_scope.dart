@@ -13,9 +13,7 @@ class SyncScope extends InheritedWidget {
   final SyncService? sync;
 
   static SyncService? maybeOf(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<SyncScope>()
-        ?.sync;
+    return context.dependOnInheritedWidgetOfExactType<SyncScope>()?.sync;
   }
 
   @override

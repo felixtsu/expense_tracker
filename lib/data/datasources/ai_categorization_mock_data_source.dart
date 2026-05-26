@@ -15,20 +15,21 @@ class AiCategorizationMockDataSource {
     final categories = ExpenseCategory.values.map((e) => e.label).join('、');
     final prompt = '''
 [Mock OpenAI API — expense categorization]
-请根据以下消费信息，从固定类别中选择一个最合适的类别。
-固定类别（必须其一）：$categories
+請根據以下消費資料，從固定類別中選擇一個最合適的類別。
+固定類別（必須其一）：$categories
 
-用户输入：
-- 金额/金额描述: $amountText
-- 备注: $note
+用戶輸入：
+- 金額/金額描述: $amountText
+- 備註: $note
 
-（真实环境将向模型发送上述内容；本 Demo 仅打印并随机返回类别。）
+（真實環境會將上述內容發送給模型；本 Demo 只打印並隨機返回類別。）
 ''';
     debugPrint(prompt);
     // ignore: avoid_print
     print(prompt);
 
     await Future<void>.delayed(const Duration(milliseconds: 450));
-    return ExpenseCategory.values[_random.nextInt(ExpenseCategory.values.length)];
+    return ExpenseCategory
+        .values[_random.nextInt(ExpenseCategory.values.length)];
   }
 }

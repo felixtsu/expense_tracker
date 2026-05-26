@@ -16,6 +16,7 @@ class Expense {
   });
 
   final int? id;
+
   /// Supabase `expenses.id` (uuid).
   final String? remoteId;
   final double amount;
